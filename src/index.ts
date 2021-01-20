@@ -1,106 +1,49 @@
-require('dotenv').config()
+require("dotenv").config();
 
-import express from 'express';
-import axios, { AxiosResponse } from 'axios';
-import { DateTime, Interval } from "luxon";
-import { Canvas_Assignment, Canvas_Submission } from './types';
+// import fs from "fs";
+// import https from "https";
+import express from "express";
+import errorHandler from "errorhandler";
 
-const app = express()
-const port = 4000
+import { config } from "./config";
+import * as Const from "./constants";
+import * as Controller from "./controllers";
+import CreateMongoBot, * as mongo from "./mongo";
 
-app.get('/test', (req, res) => {
-    res.send('Hello World!')
-  })
+const app = express();
 
-/**
- * Ex class 72087
- * Ex assignment 1147291
- */
-// app.get('/avg_grade/:courseId/:assignmentId/', (req, res) => {
-//     const courseId : number = parseInt(req.params.courseId);
-//     const assignmentId : number = parseInt(req.params.assignmentId);
-//     const config = {
-//         headers: { Authorization: `Bearer ${process.env.CANVAS_BEARER_TOKEN}` }
-//     };
+const baseEndpoint = "/";
 
-//     axios.get(`https://canvas.iastate.edu/api/v1/courses/${courseId}/assignments/${assignmentId}/submissions?per_page=10&include[]=assignment`, config)
-//     .then(function (response: any) {
-//         // handle success
-//         const jsonData = response.data;
-        
-//         console.log(response.data);
-        
-//         const scores = jsonData.filter((obj: any) => obj.workflow_state === "graded").map((obj: any) => obj.score);
-//         const avgScore = scores.reduce((a: any, b: any) => a + b, 0)/scores.length;
-     
-//         const avgGrade = avgScore/jsonData[0].assignment.points_possible
-//         console.log(avgGrade);
-//         res.json(response.data);
-//     })
-//     .catch(function (error: any) {
-//         // handle error
-//         console.log(error);
-//     })
-    
-// })
+app.use(config);
 
-/**
- * 
- */
-app.get('/avg_grade', async (req, res) => {
-    const courseId : number = parseInt(req.query.courseId as string);
-    const startDate : DateTime = DateTime.fromISO(req.query.startDateISO as string);
-    const durationDays : number = parseInt(req.query.durationDays as string);
-    // console.log(req.query.startDateISO + "|");
-    
-    const endDate = startDate.plus({days: durationDays});
-    // console.log(endDate.toLocaleString(), startDate.toLocaleString());
+const controllers = [Controller.canvas, Controller.edusense];
+controllers.forEach((controller) => app.use(baseEndpoint, controller));
 
-    const maxNumAssignments = 100;
-    const maxNumSubmissions = 100;
+app.get("/", (req, res) => {
+  console.log("Hello World");
+  res.end("Hello World");
+});
 
-    const config = {
-        headers: { Authorization: `Bearer ${process.env.CANVAS_BEARER_TOKEN}` }
-    };
+//=====Helper Functuons=====
+const CreateServer = async () => {
+  if (app.get("env") === "development") {
+    const DEV_PORT = Const.PORT;
+    app.use(errorHandler());
+    app.listen(DEV_PORT);
+    console.log(`Running a DEV API server at http://localhost:${DEV_PORT}`); // eslint-disable-line
+  } else {
+    // const key = fs.readFileSync(`${Const.CERT_DIR}/privkey.pem`);
+    // const cert = fs.readFileSync(`${Const.CERT_DIR}/cert.pem`);
+    // const options = {
+    //   key: key,
+    //   cert: cert
+    // };
+    // const server = https.createServer(options, app);
+    // server.listen(Const.PORT, () => {
+    //   console.log('Server starting on port: ' + Const.PORT); // eslint-disable-line
+    // });
+    console.error("prodution not set up yet");
+  }
+};
 
-    try {
-        const response = await axios.get(`https://canvas.iastate.edu/api/v1/courses/${courseId}/assignments?per_page=${maxNumAssignments}`, config);
-        const canvasAssignments: Canvas_Assignment[] = response.data.map((assignment: any) => new Canvas_Assignment(assignment));
-        const canvasAssignmentsInRange: Canvas_Assignment[] = canvasAssignments.filter((assignment: Canvas_Assignment) => {
-            if(!Interval.fromDateTimes(startDate, endDate).contains(assignment.due_at)) {
-                return false;
-            }
-            return true;
-        })
-
-        console.log(canvasAssignmentsInRange.map((assign: Canvas_Assignment) => assign.id));
-        
-
-        const submissionPromises = canvasAssignmentsInRange.map((assignment: Canvas_Assignment) => 
-            axios.get<Canvas_Submission[]>(`https://canvas.iastate.edu/api/v1/courses/${courseId}/assignments/${assignment.id}/submissions?per_page=${maxNumSubmissions}&include[]=assignment`, config)
-        )
-        
-        const resolvedSubmissionPromises = await Promise.all(submissionPromises);
-
-        const assignmentScores = resolvedSubmissionPromises
-        .map((rsp: AxiosResponse<Canvas_Submission[]>, i: number) => {
-            const gradedScores = rsp.data.filter((submission: Canvas_Submission) => submission.workflow_state === "graded").map((submission: Canvas_Submission) => submission.score);
-            const classPoints = gradedScores.reduce((a: number, b: number) => a + b, 0);
-            const classPointsPossible = gradedScores.length * rsp.data[0].assignment!.points_possible;
-            const assignmentName = rsp.data[0].assignment!.name;
-            const assignmentDueDate = rsp.data[0].assignment!.due_at.toLocaleString();
-            return {name: assignmentName, due: assignmentDueDate, averageGrade: classPoints/classPointsPossible};
-        });
-
-
-        res.json(assignmentScores);
-    }
-    catch(error) {
-        res.json({"error": error});
-        
-    }
-})
-
-app.listen(port, () => {
-  console.log(`Example app listening at http://localhost:${port}`)
-})
+CreateServer();
