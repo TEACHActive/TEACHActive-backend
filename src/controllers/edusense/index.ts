@@ -2,11 +2,12 @@ import express from "express";
 import multer from "multer";
 import * as child from "child_process";
 import { promiseFromChildProcess, read_directory } from "../../engine";
+import * as Const from "../../constants";
 
 const app = express();
 
 const baseEndpoint = "/edusense";
-const edusenseWorkingDir = "/home/jamkelley22/edusense/compose";
+const edusenseWorkingDir = Const.EDUSENSE_WORKING_DIR;
 const outputDir = `${edusenseWorkingDir}/output`;
 const dest = `${edusenseWorkingDir}/input`;
 const upload = multer({ dest: dest });
@@ -95,7 +96,7 @@ app.get(`${baseEndpoint}/test`, upload.single("video"), async (req, res) => {
   // res.send(parseInt(result));
 
   const allJSON = await read_directory(
-    "/home/jamkelley22/edusense/compose/output",
+    `${edusenseWorkingDir}/output`,
     ".json"
   );
 
