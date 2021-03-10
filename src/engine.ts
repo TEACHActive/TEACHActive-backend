@@ -10,6 +10,8 @@ export function promiseFromChildProcess(child: child.ChildProcess) {
 }
 
 export async function read_directory(dir: string, ext: string) {
+  //Todo: switch to using jq
+  //cat *.json | jq -s 'flatten' > merge.json
   let combined = fs
     .readdirSync(dir)
     .filter((file) => path.extname(file).toLowerCase() === ext)

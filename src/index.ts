@@ -8,15 +8,18 @@ import errorHandler from "errorhandler";
 import { config } from "./config";
 import * as Const from "./constants";
 import * as Controller from "./controllers";
-import CreateMongoBot, * as mongo from "./mongo";
+import CreateMongoBot from "./mongo";
+import { MongoClient } from "mongodb";
+import mongoose from "mongoose";
 
 const app = express();
 
 const baseEndpoint = "/";
 
 app.use(config);
+const url = `mongodb://${Const.DB_HOST}:${Const.DB_PORT}/${Const.DB_NAME}`;
 
-const controllers = [Controller.canvas, Controller.edusense];
+const controllers = [Controller.edusense, Controller.user];
 controllers.forEach((controller) => app.use(baseEndpoint, controller));
 
 app.get("/", (req, res) => {
@@ -46,4 +49,8 @@ const CreateServer = async () => {
   }
 };
 
-CreateServer();
+mongoose
+  .connect(url, { useNewUrlParser: true, useUnifiedTopology: true })
+  .then(() => {
+    CreateServer();
+  });

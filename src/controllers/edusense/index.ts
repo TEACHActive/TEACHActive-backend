@@ -1,7 +1,19 @@
 import express from "express";
 import multer from "multer";
 import * as child from "child_process";
+import mongoose from "mongoose";
+import assert from "assert";
+
 import { promiseFromChildProcess, read_directory } from "../../engine";
+import {
+  Channel,
+  ClientVideoFrame,
+  Person,
+  VideoFrame,
+} from "../../types/edusense.types";
+import * as Const from "../../constants";
+import { DateTime } from "luxon";
+import { error } from "console";
 
 const app = express();
 
@@ -10,6 +22,51 @@ const edusenseWorkingDir = "/home/jamkelley22/edusense/compose";
 const outputDir = `${edusenseWorkingDir}/output`;
 const dest = `${edusenseWorkingDir}/input`;
 const upload = multer({ dest: dest });
+const mongoURL = `mongodb://${Const.DB_HOST}:${Const.DB_PORT}/${Const.DB_NAME}`;
+
+const Schema = mongoose.Schema;
+const sessionSchema = new Schema({
+  frameNumber: Number,
+  timestamp: String,
+  people: [
+    {
+      body: [Number],
+      face: [Number],
+      hand: [Number],
+      openposeId: Number,
+      inference: {
+        posture: {
+          armPose: String,
+          sitStand: String,
+          centroidDelta: [Number],
+          armDelta: [Number],
+        },
+        face: {
+          boundingBox: [Number],
+          mouthOpen: String,
+          mouthSmile: String,
+          orentation: String,
+        },
+        head: {
+          roll: Number,
+          pitch: Number,
+          yaw: Number,
+          translationVector: [Number],
+          gazeVector: [Number],
+        },
+        trackingId: Number,
+      },
+    },
+  ],
+  channel: String,
+});
+const SessionModel = mongoose.model("Sesssion", sessionSchema);
+
+const testSchema = new Schema({
+  date: String,
+  i: Number,
+});
+const TestModel = mongoose.model("Test", testSchema);
 
 app.get(`${baseEndpoint}`, function (req, res) {
   console.log(`${baseEndpoint}`);
@@ -94,14 +151,45 @@ app.get(`${baseEndpoint}/test`, upload.single("video"), async (req, res) => {
   // const result = child.execSync(cmd).toString();
   // res.send(parseInt(result));
 
-  const allJSON = await read_directory(
-    "/home/jamkelley22/edusense/compose/output",
-    ".json"
-  );
+  // const allJSON = await read_directory(
+  //   "/home/jamkelley22/edusense/compose/output",
+  //   ".json"
+  // );
 
-  allJSON.map((json: any, i: number) => {});
+  // const clientVideoFrames = allJSON.map((json: any) =>
+  //   new VideoFrame(json).toClient()
+  // );
 
-  res.json();
+  // res.json(clientVideoFrames);
+
+  mongoose.connect(mongoURL, { useNewUrlParser: true });
+
+  let testDocs;
+  try {
+    testDocs = await (await SessionModel.collection.find()).toArray();
+  } catch (e) {
+    console.error(e);
+  }
+
+  // TestModel.collection.insertMany(
+  //   [
+  //     { date: new Date(), i: Math.random() * 1000 },
+  //     { date: new Date(), i: Math.random() * 1000 },
+  //   ],
+  //   (err, r) => {
+  //     // assert.strictEqual(null, err);
+  //     if (err) {
+  //       res.status(500).json({ error: err, r: r });
+  //       console.error(`mongoose error: ${err}`);
+  //     }
+  //     //  assert.strictEqual(3, r.insertedCount);
+  //     console.log(`Inserted ${r.insertedCount} records`);
+
+  //     mongoose.connection.close();
+  //   }
+  // );
+
+  res.json(testDocs);
 });
 
 app.post(
@@ -112,6 +200,13 @@ app.post(
 
     const isInstructorView: boolean =
       (req.query.isInstructorView as string).toLowerCase() === "true";
+
+    console.log("isInstructorView", isInstructorView);
+
+    if (!req.file) {
+      res.status(400).send("No Video");
+      return;
+    }
 
     const videoPath = req.file.path;
     const videoLocation = req.file.destination;
@@ -125,11 +220,15 @@ app.post(
     const cmdGetUsername = "whoami";
     const userName = child.execSync(cmdGetUsername).toString().trim();
 
+    console.log("whoami", userName);
+
     const cmdGetUploadedVideoLengthInSeconds = `ffprobe -i ${videoPath} -show_entries format=duration -v quiet -of csv="p=0"`;
     const videoLengthPaddingMultiplier = 1.2;
     const uploadedVideoLengthInSeconds = parseInt(
       child.execSync(cmdGetUploadedVideoLengthInSeconds).toString()
     );
+
+    console.log(uploadedVideoLengthInSeconds);
 
     const videoPipelineLogDirectory = `/home/${userName}/openpose_video_logs`;
     const cmdEnsureVideoPipelineLogDirectory = `mkdir -p ${videoPipelineLogDirectory}`;
@@ -171,45 +270,6 @@ app.post(
     const numGraphicsCards = 2;
 
     const cmdStartVideoPipeline = `nvidia-docker run \
-    --video /app/source/${videoName} \
-    --video_sock /tmp/unix.front.sock \
-    ${
-      videoPipelineStorageServerBackendURL
-        ? `--backend_url ${videoPipelineStorageServerBackendURL}`
-        : ""
-    } \
-    ${
-      videoPipelineOutputFileDirectory
-        ? `--file_output_dir ${videoPipelineOutputFileDirectory}`
-        : ""
-    } \
-    ${
-      videoPipelineEdusenseSessionId
-        ? `--session_id ${videoPipelineEdusenseSessionId}`
-        : ""
-    } \
-    ${videoPipelineSchemaName ? `--schema ${videoPipelineSchemaName}` : ""} \
-    --time_duration ${
-      uploadedVideoLengthInSeconds * videoLengthPaddingMultiplier
-    } \
-    ${processRealTime ? "--process_real_time" : ""} \
-    ${videoPipelineProcessGaze ? "--process_gaze" : ""} \
-    ${videoPipelineKeepFrameNumber ? "--keep_frame_number" : ""} \
-    ${
-      videoPipelineAreaOfIntrest
-        ? `--area_of_interest ${videoPipelineAreaOfIntrest} `
-        : ""
-    } \
-    ${videoPipelineProfilePreformance ? "--profile" : ""} \
-    ${isInstructorView ? "--instructor" : ""}
-    ${
-      videoPipelineVideoOutputName
-        ? `--video_out ${videoPipelineVideoOutputName}`
-        : ""
-    } \
-    ${videoPipelineImageOut ? "--image_out" : ""} \
-    ${videoPipelineJSONOut ? "--json_out" : ""} \
-    --use_unix_socket \
     --name ${userName}-video-${videoName} \
     -e LOCAL_USER_ID=$(id -u) \
     -e CUDA_VISIBLE_DEVICES=-1 \
@@ -218,7 +278,48 @@ app.post(
     -v ${videoLocation}:/app/source \
     --rm \
     ${videoPipelineDockerContainerTag} \
-    `;
+    --video_sock /tmp/unix.front.sock \
+    ${videoPipelineSchemaName ? `--schema ${videoPipelineSchemaName}` : ""} \
+    --use_unix_socket \
+    ${videoPipelineKeepFrameNumber ? "--keep_frame_number" : ""} \
+    ${videoPipelineProcessGaze ? "--process_gaze" : ""} \
+    ${videoPipelineProfilePreformance ? "--profile" : ""} \
+    --time_duration ${Math.ceil(
+      uploadedVideoLengthInSeconds * videoLengthPaddingMultiplier
+    )} \
+    ${processRealTime ? "--process_real_time" : ""} \
+    --video /app/source/${videoName} \
+    
+    
+    
+    ${
+      videoPipelineEdusenseSessionId
+        ? `--session_id ${videoPipelineEdusenseSessionId}`
+        : ""
+    } \
+    ${
+      videoPipelineAreaOfIntrest
+        ? `--area_of_interest ${videoPipelineAreaOfIntrest} `
+        : ""
+    } \
+    ${isInstructorView ? "--instructor" : ""} \
+    ${
+      videoPipelineStorageServerBackendURL
+        ? `--backend_url ${videoPipelineStorageServerBackendURL}`
+        : ""
+    } \
+    ${
+      videoPipelineVideoOutputName
+        ? `--video_out ${videoPipelineVideoOutputName}`
+        : ""
+    } \
+    ${
+      videoPipelineOutputFileDirectory
+        ? `--file_output_dir ${videoPipelineOutputFileDirectory}`
+        : ""
+    } \
+    ${videoPipelineImageOut ? "--image_out" : ""} \
+    ${videoPipelineJSONOut ? "--json_out" : ""}`;
 
     const cmdStartOpenposePipeline = `nvidia-docker run \
     --name ${userName}-openpose-${videoName} \
@@ -247,33 +348,44 @@ app.post(
     ${audioDockerContainerTag} \
     --front_url /app/source/${videoName} \
     --back_url /app/source/${videoName} \
-    --time_duration ${
+    --time_duration ${Math.ceil(
       uploadedVideoLengthInSeconds * videoLengthPaddingMultiplier
-    }`;
+    )}`;
     //Todo: differentate front and back video
+
+    console.log("start video pipeline");
 
     const videoPipelineChild = child.exec(
       cmdStartVideoPipeline,
       (error, stdout, stderr) => {
         if (error) {
           console.error(`exec error: ${error}`);
+          res
+            .status(500)
+            .json({ error: error, stdout: stdout, stderr: stderr });
           return Promise.resolve(error);
-          // res.status(500).send(error);
-          // return;
         }
         return Promise.resolve(stdout);
       }
     );
+
+    console.log("Start openpose pipeline");
+
     const openposePipelineChild = child.exec(
       cmdStartOpenposePipeline,
       (error, stdout, stderr) => {
         if (error) {
+          res
+            .status(500)
+            .json({ error: error, stdout: stdout, stderr: stderr });
           console.error(`exec error: ${error}`);
-          // res.status(500).send(error);
           // return;
         }
       }
     );
+
+    console.log("start audio pipeline");
+
     const audioPipelineChild = child.exec(
       cmdStartAudioPipeline,
       (error, stdout, stderr) => {
@@ -288,8 +400,61 @@ app.post(
     await Promise.all([
       promiseFromChildProcess(videoPipelineChild),
       promiseFromChildProcess(openposePipelineChild),
-      promiseFromChildProcess(audioPipelineChild),
+      // promiseFromChildProcess(audioPipelineChild),
     ]);
+
+    const allJSON = await read_directory(
+      videoPipelineOutputFileDirectory,
+      ".json"
+    );
+
+    const clientVideoFrames = allJSON.map((json: any) =>
+      new VideoFrame(json).toClient()
+    );
+
+    console.log("Mongoose");
+
+    mongoose.connect(mongoURL, { useNewUrlParser: true });
+
+    // let testDocs;
+    // try {
+    //   testDocs = await (await TestModel.collection.find()).toArray();
+    // } catch (e) {
+    //   console.error(e);
+    // }
+
+    // TestModel.collection.insertMany(
+    //   [
+    //     { date: new Date(), i: Math.random() * 1000 },
+    //     { date: new Date(), i: Math.random() * 1000 },
+    //   ],
+    //   (err, r) => {
+    //     // assert.strictEqual(null, err);
+    //     if (err) {
+    //       res.status(500).json({ error: err, r: r });
+    //       console.error(`mongoose error: ${err}`);
+    //     }
+    //     //  assert.strictEqual(3, r.insertedCount);
+    //     console.log(`Inserted ${r.insertedCount} records`);
+
+    //     mongoose.connection.close();
+    //   }
+    // );
+
+    console.log("#allJSON", allJSON.length);
+    console.log("#clientVideoFrames", clientVideoFrames.length);
+
+    SessionModel.collection.insertMany(clientVideoFrames, (err, r) => {
+      // assert.strictEqual(null, err);
+      if (err) {
+        res.status(500).json({ error: err, r: r });
+        console.error(`mongoose error: ${err}`);
+      }
+      //  assert.strictEqual(3, r.insertedCount);
+      console.log(`Inserted ${r.insertedCount} records`);
+
+      mongoose.connection.close();
+    });
 
     // const result = child.execSync(cmdStartVideoPipeline);
 
