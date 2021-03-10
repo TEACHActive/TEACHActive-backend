@@ -18,7 +18,7 @@ import { error } from "console";
 const app = express();
 
 const baseEndpoint = "/edusense";
-const edusenseWorkingDir = "/home/jamkelley22/edusense/compose";
+const edusenseWorkingDir = Const.EDUSENSE_WORKING_DIR;
 const outputDir = `${edusenseWorkingDir}/output`;
 const dest = `${edusenseWorkingDir}/input`;
 const upload = multer({ dest: dest });
@@ -161,6 +161,7 @@ app.get(`${baseEndpoint}/test`, upload.single("video"), async (req, res) => {
   // );
 
   // res.json(clientVideoFrames);
+  const allJSON = await read_directory(`${edusenseWorkingDir}/output`, ".json");
 
   mongoose.connect(mongoURL, { useNewUrlParser: true });
 
