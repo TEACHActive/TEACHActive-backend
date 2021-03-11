@@ -26,4 +26,5 @@ export const DB_NAME = env.DB_NAME;
 if (!DB_NAME) throw new Error(envLoadError("DB_NAME"));
 
 export const EDUSENSE_WORKING_DIR = env.EDUSENSE_WORKING_DIR;
-if (!EDUSENSE_WORKING_DIR) throw new Error(envLoadError("EDUSENSE_WORKING_DIR"));
+if (!EDUSENSE_WORKING_DIR)
+  throw new Error(envLoadError("EDUSENSE_WORKING_DIR"));

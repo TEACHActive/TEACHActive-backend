@@ -1,3 +1,4 @@
+import { privateEncrypt } from "crypto";
 import express from "express";
 import { DateTime, Interval } from "luxon";
 import { UserModel } from "../../models/userModel";
@@ -46,19 +47,26 @@ app.get(`${baseEndpoint}/:id`, async (req, res) => {
   if (userID === undefined) {
     console.error("id must be defined");
   }
-  const matchingUser = await GetUser(userID);
 
-  if (!matchingUser) {
-    const errorMsg = `User with id: ${userID} not found`;
-    console.error(errorMsg);
-    res.json({ error: errorMsg });
+  try {
+    const matchingUser = await UserModel.findById(userID);
+
+    if (!matchingUser) {
+      const errorMsg = `User with id: ${userID} not found`;
+      console.error(errorMsg);
+      res.json({ error: errorMsg });
+      return;
+    }
+    res.json(new User(matchingUser));
+  } catch (err) {
+    console.error(err);
+    res.json({ error: JSON.stringify(err) });
+    return;
   }
-  res.json(new User(matchingUser));
 });
 
 /**
  * Update a user
- * Todo: Fix saving issue
  */
 app.put(`${baseEndpoint}/:id`, async (req, res) => {
   const userID = req.params.id;
@@ -68,23 +76,9 @@ app.put(`${baseEndpoint}/:id`, async (req, res) => {
   }
 
   try {
-    let matchingUser = await GetUser(userID);
+    const updatedUser = await UserModel.findByIdAndUpdate(userID, req.body);
 
-    if (!matchingUser) {
-      const errorMsg = `User with id: ${userID} not found`;
-      console.error(errorMsg);
-      res.json({ error: errorMsg });
-      return;
-    }
-
-    matchingUser = {
-      ...matchingUser,
-      ...req.body,
-    };
-
-    matchingUser?.save();
-
-    res.json(new User(matchingUser));
+    res.json(new User(updatedUser));
   } catch (err) {
     if (err) {
       console.error(err);
@@ -96,8 +90,23 @@ app.put(`${baseEndpoint}/:id`, async (req, res) => {
 
 /**
  * Delete a user
- * Todo: Impliment
  */
-app.delete(`${baseEndpoint}/:id`, async (req, res) => {});
+app.delete(`${baseEndpoint}/:id`, async (req, res) => {
+  const userID = req.params.id;
+  if (userID === undefined) {
+    console.error("id must be defined");
+    console.error(`User with id: ${userID} not deleted`);
+  }
+
+  try {
+    const deletedUser = await UserModel.findOneAndDelete({ _id: userID });
+
+    res.json(new User(deletedUser));
+  } catch (err) {
+    console.error(err);
+    res.json({ error: JSON.stringify(err) });
+    return;
+  }
+});
 
 export { app as user };
