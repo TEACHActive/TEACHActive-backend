@@ -1,17 +1,11 @@
-import { privateEncrypt } from "crypto";
 import express from "express";
-import { DateTime, Interval } from "luxon";
+import { DateTime } from "luxon";
 import { UserModel } from "../../models/userModel";
-import { GetUser } from "./engine";
 import { User } from "./types";
 
 const app = express();
 
 const baseEndpoint = "/user";
-
-app.get(`${baseEndpoint}`, function (req, res) {
-  res.end("Hello User");
-});
 
 /**
  * Create a new user
