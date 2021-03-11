@@ -8,8 +8,6 @@ import errorHandler from "errorhandler";
 import { config } from "./config";
 import * as Const from "./constants";
 import * as Controller from "./controllers";
-import CreateMongoBot from "./mongo";
-import { MongoClient } from "mongodb";
 import mongoose from "mongoose";
 
 const app = express();
