@@ -9,15 +9,21 @@ import { config } from "./config";
 import * as Const from "./constants";
 import * as Controller from "./controllers";
 import mongoose from "mongoose";
+import cors from "cors";
 
 const app = express();
 
 const baseEndpoint = "/";
 
+app.use(cors());
 app.use(config);
 const url = `mongodb://${Const.DB_HOST}:${Const.DB_PORT}/${Const.DB_NAME}`;
 
-const controllers = [Controller.edusense, Controller.user];
+const controllers = [
+  Controller.user,
+  Controller.sessions,
+  Controller.reflections,
+];
 controllers.forEach((controller) => app.use(baseEndpoint, controller));
 
 app.get("/", (req, res) => {
