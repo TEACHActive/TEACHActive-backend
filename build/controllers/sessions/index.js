@@ -58,64 +58,85 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-require("dotenv").config();
-// import fs from "fs";
-// import https from "https";
+exports.sessions = void 0;
 var express_1 = __importDefault(require("express"));
-var errorhandler_1 = __importDefault(require("errorhandler"));
-var config_1 = require("./config");
-var Const = __importStar(require("./constants"));
-var Controller = __importStar(require("./controllers"));
-var mongoose_1 = __importDefault(require("mongoose"));
-var cors_1 = __importDefault(require("cors"));
+var types_1 = require("./types");
+var mongodb_1 = __importStar(require("mongodb"));
 var app = express_1.default();
-var baseEndpoint = "/";
-app.use(cors_1.default());
-app.use(config_1.config);
-var url = "mongodb://" + Const.DB_HOST + ":" + Const.DB_PORT + "/" + Const.DB_NAME;
-var controllers = [
-    Controller.user,
-    Controller.sessions,
-    Controller.reflections,
-];
-controllers.forEach(function (controller) { return app.use(baseEndpoint, controller); });
-app.get("/", function (req, res) {
-    console.log("Hello World");
-    res.end("Hello World");
-});
-//=====Helper Functuons=====
-var CreateServer = function () { return __awaiter(void 0, void 0, void 0, function () {
-    var DEV_PORT;
+exports.sessions = app;
+var baseEndpoint = "/edusense/sessions";
+/**
+ * Get a session
+ */
+app.get(baseEndpoint + "/:id", function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
+    var sessionID;
     return __generator(this, function (_a) {
-        if (app.get("env") === "development") {
-            DEV_PORT = Const.PORT;
-            app.use(errorhandler_1.default());
-            app.listen(DEV_PORT);
-            console.log("Running a DEV API server at http://localhost:" + DEV_PORT); // eslint-disable-line
+        sessionID = req.params.id;
+        if (sessionID === undefined) {
+            console.error("id must be defined");
         }
-        else {
-            // const key = fs.readFileSync(`${Const.CERT_DIR}/privkey.pem`);
-            // const cert = fs.readFileSync(`${Const.CERT_DIR}/cert.pem`);
-            // const options = {
-            //   key: key,
-            //   cert: cert
-            // };
-            // const server = https.createServer(options, app);
-            // server.listen(Const.PORT, () => {
-            //   console.log('Server starting on port: ' + Const.PORT); // eslint-disable-line
-            // });
-            console.error("prodution not set up yet");
-        }
+        mongodb_1.default.connect("mongodb://localhost:27017/edusense", function (err, client) {
+            if (err)
+                throw err;
+            var db = client.db("edusense");
+            db.collection("sessions").findOne({ _id: new mongodb_1.ObjectId(sessionID) }, function (err, result) {
+                if (err)
+                    throw err;
+                res.json(result);
+            });
+        });
         return [2 /*return*/];
     });
-}); };
-mongoose_1.default
-    .connect(url, {
-    useNewUrlParser: true,
-    useCreateIndex: true,
-    useUnifiedTopology: true,
-    useFindAndModify: false,
-})
-    .then(function () {
-    CreateServer();
-});
+}); });
+/**
+ * Update a session name
+ */
+app.put(baseEndpoint + "/:id/name", function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
+    var sessionID, result;
+    return __generator(this, function (_a) {
+        sessionID = req.params.id;
+        if (sessionID === undefined) {
+            console.error("id must be defined");
+        }
+        result = setMetric(sessionID, { name: req.body.name });
+        return [2 /*return*/, res.json(result)];
+    });
+}); });
+/**
+ * Update a session performance
+ */
+app.put(baseEndpoint + "/:id/performance", function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
+    var sessionID, result;
+    return __generator(this, function (_a) {
+        sessionID = req.params.id;
+        if (sessionID === undefined) {
+            console.error("id must be defined");
+        }
+        result = setMetric(sessionID, { performance: req.body.performance });
+        return [2 /*return*/, res.json(result)];
+    });
+}); });
+var setMetric = function (sessionID, setMetricObj) {
+    mongodb_1.default.connect("mongodb://localhost:27017/edusense", function (err, client) {
+        if (err) {
+            console.error(err);
+            return { error: "There was an error", detail: err };
+        }
+        var db = client.db("edusense");
+        db.collection("sessions").updateOne({ _id: new mongodb_1.ObjectId(sessionID) }, {
+            $set: setMetricObj,
+        }, function (err, result) {
+            if (err) {
+                console.error(err);
+                return { error: "There was an error", detail: err };
+            }
+            db.collection("sessions").findOne({ _id: new mongodb_1.ObjectId(sessionID) }, function (err, result) {
+                if (err) {
+                    console.error(err);
+                    return { error: "There was an error", detail: err };
+                }
+                return new types_1.Session(result).toClient();
+            });
+        });
+    });
+};

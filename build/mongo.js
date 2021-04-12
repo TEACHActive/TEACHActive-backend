@@ -54,68 +54,33 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
-require("dotenv").config();
-// import fs from "fs";
-// import https from "https";
-var express_1 = __importDefault(require("express"));
-var errorhandler_1 = __importDefault(require("errorhandler"));
-var config_1 = require("./config");
+exports.Mongo = void 0;
+var mongodb_1 = require("mongodb");
 var Const = __importStar(require("./constants"));
-var Controller = __importStar(require("./controllers"));
-var mongoose_1 = __importDefault(require("mongoose"));
-var cors_1 = __importDefault(require("cors"));
-var app = express_1.default();
-var baseEndpoint = "/";
-app.use(cors_1.default());
-app.use(config_1.config);
-var url = "mongodb://" + Const.DB_HOST + ":" + Const.DB_PORT + "/" + Const.DB_NAME;
-var controllers = [
-    Controller.user,
-    Controller.sessions,
-    Controller.reflections,
-];
-controllers.forEach(function (controller) { return app.use(baseEndpoint, controller); });
-app.get("/", function (req, res) {
-    console.log("Hello World");
-    res.end("Hello World");
-});
-//=====Helper Functuons=====
-var CreateServer = function () { return __awaiter(void 0, void 0, void 0, function () {
-    var DEV_PORT;
-    return __generator(this, function (_a) {
-        if (app.get("env") === "development") {
-            DEV_PORT = Const.PORT;
-            app.use(errorhandler_1.default());
-            app.listen(DEV_PORT);
-            console.log("Running a DEV API server at http://localhost:" + DEV_PORT); // eslint-disable-line
-        }
-        else {
-            // const key = fs.readFileSync(`${Const.CERT_DIR}/privkey.pem`);
-            // const cert = fs.readFileSync(`${Const.CERT_DIR}/cert.pem`);
-            // const options = {
-            //   key: key,
-            //   cert: cert
-            // };
-            // const server = https.createServer(options, app);
-            // server.listen(Const.PORT, () => {
-            //   console.log('Server starting on port: ' + Const.PORT); // eslint-disable-line
-            // });
-            console.error("prodution not set up yet");
-        }
-        return [2 /*return*/];
-    });
-}); };
-mongoose_1.default
-    .connect(url, {
-    useNewUrlParser: true,
-    useCreateIndex: true,
-    useUnifiedTopology: true,
-    useFindAndModify: false,
-})
-    .then(function () {
-    CreateServer();
-});
+var Mongo = /** @class */ (function () {
+    function Mongo() {
+        var url = "mongodb://" + Const.DB_HOST + ":" + Const.DB_PORT + "/" + Const.DB_NAME;
+        this.client = new mongodb_1.MongoClient(url);
+        this.hasInit = false;
+    }
+    Mongo.prototype.init = function () {
+        return __awaiter(this, void 0, void 0, function () {
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0: return [4 /*yield*/, this.client.connect()];
+                    case 1:
+                        _a.sent();
+                        console.log("connected");
+                        this.db = this.client.db();
+                        // this.sessions = new SessionCollection(this.db);
+                        this.hasInit = true;
+                        return [2 /*return*/];
+                }
+            });
+        });
+    };
+    return Mongo;
+}());
+exports.Mongo = Mongo;
+exports.default = new Mongo();

@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 require("dotenv").config();
 
 // import fs from "fs";
@@ -17,7 +19,7 @@ const baseEndpoint = "/";
 
 app.use(cors());
 app.use(config);
-const url = `mongodb://${Const.DB_HOST}:${Const.DB_PORT}/${Const.DB_NAME}`;
+const url = "mongodb://mongo:27017/teachactive"; //`mongodb://${Const.DB_HOST}:${Const.DB_PORT}/${Const.DB_NAME}`;
 
 const controllers = [
   Controller.user,
@@ -50,6 +52,10 @@ const CreateServer = async () => {
     //   console.log('Server starting on port: ' + Const.PORT); // eslint-disable-line
     // });
     console.error("prodution not set up yet");
+    const DEV_PORT = Const.PORT;
+    app.use(errorHandler());
+    app.listen(DEV_PORT);
+    console.log(`Running a DEV API server at http://localhost:${DEV_PORT}`); // eslint-disable-line
   }
 };
 

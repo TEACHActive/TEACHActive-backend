@@ -1,14 +1,24 @@
 import express from "express";
 import { DateTime, Interval } from "luxon";
 import { Document } from "mongoose";
-import { UserModel } from "../../models/userModel";
-import { User } from "./types";
+import { ReflectionsModel } from "../../models/reflectionsModel";
+import { UserSessionReflections } from "./types";
 
-export const GetUser = async (id: string): Promise<Document<User> | null> => {
-  if (id === undefined) {
-    throw new Error(`Can not get user with id: ${id}`);
+export const GetUserSessionReflections = async (
+  uid: string,
+  sessionId: string
+): Promise<Document<UserSessionReflections> | null> => {
+  if (uid === undefined) {
+    throw new Error(`Can not get reflections with uid: ${uid}`);
   }
-  const matchingUser = await UserModel.findById(id);
+  if (sessionId === undefined) {
+    throw new Error(`Can not get reflections with sessionId: ${sessionId}`);
+  }
 
-  return matchingUser;
+  const matchingReflections = await ReflectionsModel.findOne({
+    userId: uid,
+    sessionId: sessionId,
+  });
+
+  return matchingReflections;
 };
