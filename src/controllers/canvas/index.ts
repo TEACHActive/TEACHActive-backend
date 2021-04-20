@@ -2,7 +2,7 @@ import axios, { AxiosResponse } from "axios";
 import express from "express";
 import { DateTime, Interval } from "luxon";
 import path from "path";
-import { Canvas_Assignment, Canvas_Submission } from "../../types/canvas.types";
+import { Canvas_Assignment, Canvas_Submission } from "./canvas.types";
 
 const app = express();
 

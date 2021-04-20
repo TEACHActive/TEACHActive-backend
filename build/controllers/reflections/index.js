@@ -42,41 +42,137 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.reflections = void 0;
 var express_1 = __importDefault(require("express"));
 var reflectionsModel_1 = require("../../models/reflectionsModel");
-var types_1 = require("./types");
 var app = express_1.default();
 exports.reflections = app;
 var baseEndpoint = "/reflections";
 /**
- * Create a new reflection
+ * Create/Update a new reflection
  */
-app.post("" + baseEndpoint, function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
-    var _a, userId, sessionId, reflections, newReflection, savedReflection, err_1;
+app.put(baseEndpoint + "/:uid/:sessionId", function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
+    var _a, uid, sessionId, reflections, matchingReflection, newReflection, savedReflection, updatedReflection, err_1;
     return __generator(this, function (_b) {
         switch (_b.label) {
             case 0:
-                _a = req.body, userId = _a.userId, sessionId = _a.sessionId, reflections = _a.reflections;
+                _a = req.params, uid = _a.uid, sessionId = _a.sessionId;
+                reflections = req.body.reflections;
+                if (uid === undefined) {
+                    console.error("id must be defined");
+                    res.status(400);
+                    res.json({
+                        error: "Must Provide userId",
+                        detail: "Must Provide userId",
+                    });
+                    return [2 /*return*/];
+                }
+                if (sessionId === undefined) {
+                    console.error("sessionId must be defined");
+                    res.status(400);
+                    res.json({
+                        error: "Must Provide sessionId",
+                        detail: "Must Provide sessionId",
+                    });
+                    return [2 /*return*/];
+                }
+                _b.label = 1;
+            case 1:
+                _b.trys.push([1, 6, , 7]);
+                return [4 /*yield*/, reflectionsModel_1.ReflectionsModel.findOne({
+                        userId: uid,
+                        sessionId: sessionId,
+                    })];
+            case 2:
+                matchingReflection = _b.sent();
+                if (!!matchingReflection) return [3 /*break*/, 4];
                 newReflection = new reflectionsModel_1.ReflectionsModel({
-                    userId: userId,
+                    userId: uid,
                     sessionId: sessionId,
                     reflections: reflections,
                 });
-                console.log(newReflection);
+                return [4 /*yield*/, newReflection.save()];
+            case 3:
+                savedReflection = _b.sent();
+                res.status(201);
+                res.json(savedReflection);
+                return [2 /*return*/];
+            case 4: return [4 /*yield*/, reflectionsModel_1.ReflectionsModel.updateOne({
+                    userId: uid,
+                    sessionId: sessionId,
+                }, { reflections: reflections })];
+            case 5:
+                updatedReflection = _b.sent();
+                res.status(200);
+                res.json(updatedReflection);
+                console.log(updatedReflection);
+                return [2 /*return*/];
+            case 6:
+                err_1 = _b.sent();
+                console.error(err_1);
+                res.status(500);
+                res.json({
+                    error: "error when creating/updating reflection",
+                    detail: JSON.stringify(err_1),
+                });
+                return [2 /*return*/];
+            case 7: return [2 /*return*/];
+        }
+    });
+}); });
+/**
+ * Get a reflection
+ */
+app.get(baseEndpoint + "/:uid/:sessionId", function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
+    var _a, uid, sessionId, matchingReflection, errorMsg, err_2;
+    return __generator(this, function (_b) {
+        switch (_b.label) {
+            case 0:
+                _a = req.params, uid = _a.uid, sessionId = _a.sessionId;
+                if (uid === undefined) {
+                    console.error("id must be defined");
+                    res.status(400);
+                    res.json({
+                        error: "Must Provide userId",
+                        detail: "Must Provide userId",
+                    });
+                    return [2 /*return*/];
+                }
+                if (sessionId === undefined) {
+                    console.error("sessionId must be defined");
+                    res.status(400);
+                    res.json({
+                        error: "Must Provide sessionId",
+                        detail: "Must Provide sessionId",
+                    });
+                    return [2 /*return*/];
+                }
                 _b.label = 1;
             case 1:
                 _b.trys.push([1, 3, , 4]);
-                return [4 /*yield*/, newReflection.save()];
+                return [4 /*yield*/, reflectionsModel_1.ReflectionsModel.findOne({
+                        userId: uid,
+                        sessionId: sessionId,
+                    })];
             case 2:
-                savedReflection = _b.sent();
-                res.json(new types_1.UserSessionReflections(savedReflection));
-                return [3 /*break*/, 4];
-            case 3:
-                err_1 = _b.sent();
-                if (err_1) {
-                    console.error(err_1);
-                    res.json({ error: JSON.stringify(err_1) });
+                matchingReflection = _b.sent();
+                console.log(matchingReflection);
+                if (!matchingReflection) {
+                    errorMsg = "User with id: " + uid + " and sessionId " + sessionId + " not found";
+                    console.error(errorMsg);
+                    res.status(404);
+                    res.json({
+                        error: "error when creating/updating reflection",
+                        detail: JSON.stringify(errorMsg),
+                    });
                     return [2 /*return*/];
                 }
+                res.status(200);
+                res.json(matchingReflection);
                 return [3 /*break*/, 4];
+            case 3:
+                err_2 = _b.sent();
+                console.error(err_2);
+                res.status(500);
+                res.json({ error: JSON.stringify(err_2) });
+                return [2 /*return*/];
             case 4: return [2 /*return*/];
         }
     });

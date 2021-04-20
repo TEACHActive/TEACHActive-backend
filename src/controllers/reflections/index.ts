@@ -1,61 +1,129 @@
 import express from "express";
 import { DateTime } from "luxon";
 import { ReflectionsModel } from "../../models/reflectionsModel";
-import { AbstractQuestion, UserSessionReflections } from "./types";
 
 const app = express();
 
 const baseEndpoint = "/reflections";
 
 /**
- * Create a new reflection
+ * Create/Update a new reflection
  */
-app.post(`${baseEndpoint}`, async (req, res) => {
-  const { userId, sessionId, reflections } = req.body;
-  const newReflection = new ReflectionsModel({
-    userId: userId,
-    sessionId: sessionId,
-    reflections: reflections,
-  });
-  console.log(newReflection);
+app.put(`${baseEndpoint}/:uid/:sessionId`, async (req, res) => {
+  const { uid, sessionId } = req.params;
+  const { reflections } = req.body;
+  if (uid === undefined) {
+    console.error("id must be defined");
+    res.status(400);
+    res.json({
+      error: "Must Provide userId",
+      detail: "Must Provide userId",
+    });
+    return;
+  }
+  if (sessionId === undefined) {
+    console.error("sessionId must be defined");
+    res.status(400);
+    res.json({
+      error: "Must Provide sessionId",
+      detail: "Must Provide sessionId",
+    });
+    return;
+  }
 
   try {
-    const savedReflection = await newReflection.save();
-    res.json(new UserSessionReflections(savedReflection));
-  } catch (err) {
-    if (err) {
-      console.error(err);
-      res.json({ error: JSON.stringify(err) });
+    const matchingReflection = await ReflectionsModel.findOne({
+      userId: uid,
+      sessionId: sessionId,
+    });
+
+    if (!matchingReflection) {
+      const newReflection = new ReflectionsModel({
+        userId: uid,
+        sessionId: sessionId,
+        reflections: reflections,
+      });
+      const savedReflection = await newReflection.save();
+      res.status(201);
+      res.json(savedReflection);
       return;
     }
+
+    const updatedReflection = await ReflectionsModel.updateOne(
+      {
+        userId: uid,
+        sessionId: sessionId,
+      },
+      { reflections: reflections }
+    );
+
+    res.status(200);
+    res.json(updatedReflection);
+    console.log(updatedReflection);
+
+    return;
+  } catch (err) {
+    console.error(err);
+    res.status(500);
+    res.json({
+      error: "error when creating/updating reflection",
+      detail: JSON.stringify(err),
+    });
+    return;
   }
 });
 
-// /**
-//  * Get a user
-//  */
-// app.get(`${baseEndpoint}/:id`, async (req, res) => {
-//   const userID = req.params.id;
-//   if (userID === undefined) {
-//     console.error("id must be defined");
-//   }
+/**
+ * Get a reflection
+ */
+app.get(`${baseEndpoint}/:uid/:sessionId`, async (req, res) => {
+  const { uid, sessionId } = req.params;
 
-//   try {
-//     const matchingUser = await UserModel.findById(userID);
+  if (uid === undefined) {
+    console.error("id must be defined");
+    res.status(400);
+    res.json({
+      error: "Must Provide userId",
+      detail: "Must Provide userId",
+    });
+    return;
+  }
+  if (sessionId === undefined) {
+    console.error("sessionId must be defined");
+    res.status(400);
+    res.json({
+      error: "Must Provide sessionId",
+      detail: "Must Provide sessionId",
+    });
+    return;
+  }
 
-//     if (!matchingUser) {
-//       const errorMsg = `User with id: ${userID} not found`;
-//       console.error(errorMsg);
-//       res.json({ error: errorMsg });
-//       return;
-//     }
-//     res.json(new User(matchingUser));
-//   } catch (err) {
-//     console.error(err);
-//     res.json({ error: JSON.stringify(err) });
-//     return;
-//   }
-// });
+  try {
+    const matchingReflection = await ReflectionsModel.findOne({
+      userId: uid,
+      sessionId: sessionId,
+    });
+    console.log(matchingReflection);
+
+    if (!matchingReflection) {
+      const errorMsg = `User with id: ${uid} and sessionId ${sessionId} not found`;
+      console.error(errorMsg);
+      res.status(404);
+      res.json({
+        error: "error when creating/updating reflection",
+        detail: JSON.stringify(errorMsg),
+      });
+      return;
+    }
+    res.status(200);
+    res.json(matchingReflection);
+  } catch (err) {
+    console.error(err);
+    res.status(500);
+    res.json({ error: JSON.stringify(err) });
+    return;
+  }
+});
 
 // /**
 //  * Update a user

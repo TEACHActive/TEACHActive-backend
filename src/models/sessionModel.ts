@@ -1,31 +1,19 @@
-import mongoose from "mongoose";
+import mongoose, { Schema } from "mongoose";
 
-const Schema = mongoose.Schema;
-
-const SessionSchema = new Schema({
-    keyword: {
-        type: String
-    },
-    developer: {
-        type: String
-    },
-    version: {
-        type: String
-    },
-    timestamp: {
-        type: Date
-    },
-    schemas: {
-        type: [String]
-    },
-    metadata: {
-        type: Object
-    },
-    name: {
-        type: String
-    },
+const MetadataSchema = new Schema({
+  name: String,
+  preformance: Number,
 });
 
-const SessionModel = mongoose.model("SessionModel", SessionSchema);
-
-export {SessionModel}
+export const SessionModel = mongoose.model(
+  "SessionModel",
+  new Schema({
+    keyword: String,
+    developer: String,
+    version: String,
+    timestamp: String,
+    schemas: [String],
+    metadata: MetadataSchema,
+  }),
+  "sessions"
+);

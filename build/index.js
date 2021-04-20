@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 "use strict";
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
@@ -73,6 +74,7 @@ var baseEndpoint = "/";
 app.use(cors_1.default());
 app.use(config_1.config);
 var url = "mongodb://" + Const.DB_HOST + ":" + Const.DB_PORT + "/" + Const.DB_NAME;
+var dev_url = "mongodb://localhost:" + Const.DB_PORT + "/" + Const.DB_NAME;
 var controllers = [
     Controller.user,
     Controller.sessions,
@@ -85,7 +87,7 @@ app.get("/", function (req, res) {
 });
 //=====Helper Functuons=====
 var CreateServer = function () { return __awaiter(void 0, void 0, void 0, function () {
-    var DEV_PORT;
+    var DEV_PORT, DEV_PORT;
     return __generator(this, function (_a) {
         if (app.get("env") === "development") {
             DEV_PORT = Const.PORT;
@@ -105,12 +107,16 @@ var CreateServer = function () { return __awaiter(void 0, void 0, void 0, functi
             //   console.log('Server starting on port: ' + Const.PORT); // eslint-disable-line
             // });
             console.error("prodution not set up yet");
+            DEV_PORT = Const.PORT;
+            app.use(errorhandler_1.default());
+            app.listen(DEV_PORT);
+            console.log("Running a DEV API server at http://localhost:" + DEV_PORT); // eslint-disable-line
         }
         return [2 /*return*/];
     });
 }); };
 mongoose_1.default
-    .connect(url, {
+    .connect(process.env.NODE_ENV === "production" ? url : dev_url, {
     useNewUrlParser: true,
     useCreateIndex: true,
     useUnifiedTopology: true,

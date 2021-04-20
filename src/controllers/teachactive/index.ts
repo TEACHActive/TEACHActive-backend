@@ -7,21 +7,36 @@ import MongoClient, { ObjectId } from "mongodb";
 
 const app = express();
 
-const baseEndpoint = "/edusense/sessions";
+const baseEndpoint = "/teachactive";
+
+/**
+ * Test Endpoint
+ */
+app.get(`${baseEndpoint}`, function (req, res) {
+  console.log(`${baseEndpoint}`);
+  res.end("Hello TEACHctive");
+});
 
 /**
  * Get a session
  */
-app.get(`${baseEndpoint}/:id`, async (req, res) => {
+app.get(`${baseEndpoint}/:id`, async (req: any, res) => {
+  const { mongoose } = req;
+  console.log(mongoose);
+
   const sessionID = req.params.id;
   if (sessionID === undefined) {
     console.error("id must be defined");
   }
 
   MongoClient.connect(
-    "mongodb://localhost:27017/edusense",
+    "mongodb://localhost:27019/edusense",
     function (err, client) {
-      if (err) throw err;
+      if (err) {
+        console.error(err);
+        res.json({ error: "Error connecting to db", detail: err });
+        return;
+      }
 
       var db = client.db("edusense");
 
@@ -63,7 +78,7 @@ app.put(`${baseEndpoint}/:id/performance`, async (req, res) => {
 
 const setMetric = (sessionID: string, setMetricObj: object): any => {
   MongoClient.connect(
-    "mongodb://localhost:27017/edusense",
+    "mongodb://localhost:27019/edusense",
     function (err, client) {
       if (err) {
         console.error(err);

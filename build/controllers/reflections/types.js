@@ -1,79 +1,139 @@
 "use strict";
-var __extends = (this && this.__extends) || (function () {
-    var extendStatics = function (d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    };
-    return function (d, b) {
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.SingleChoiceQuestion = exports.MultiChoiceQuestion = exports.YNQuestion = exports.AbstractQuestion = exports.UserSessionReflections = void 0;
-var UserSessionReflections = /** @class */ (function () {
-    function UserSessionReflections(data) {
-        this.userId = data.userId;
-        this.sessionId = data.sessionId;
-        this.reflections = data.reflections.map(function (reflection) { return new AbstractQuestion(reflection); });
-    }
-    return UserSessionReflections;
-}());
-exports.UserSessionReflections = UserSessionReflections;
-var AbstractQuestion = /** @class */ (function () {
-    // dateAnswered: DateTime;
-    function AbstractQuestion(data) {
-        this.id = data._id || data.id;
-        this.prompt = data.prompt;
-        // this.dateAnswered = data.dateAnswered;
-    }
-    return AbstractQuestion;
-}());
-exports.AbstractQuestion = AbstractQuestion;
-var YNQuestion = /** @class */ (function (_super) {
-    __extends(YNQuestion, _super);
-    function YNQuestion(data) {
-        var _this = _super.call(this, data) || this;
-        _this.yes = data.yes;
-        _this.no = data.no;
-        _this.onYes = data.onYes;
-        _this.onNo = data.onNo;
-        return _this;
-    }
-    return YNQuestion;
-}(AbstractQuestion));
-exports.YNQuestion = YNQuestion;
-var MultiChoiceQuestion = /** @class */ (function (_super) {
-    __extends(MultiChoiceQuestion, _super);
-    function MultiChoiceQuestion(data) {
-        var _this = _super.call(this, data) || this;
-        _this.options = data.options;
-        _this.hasOther = data.hasOther;
-        _this.otherValue = data.otherValue;
-        return _this;
-    }
-    return MultiChoiceQuestion;
-}(AbstractQuestion));
-exports.MultiChoiceQuestion = MultiChoiceQuestion;
-var SingleChoiceQuestion = /** @class */ (function (_super) {
-    __extends(SingleChoiceQuestion, _super);
-    function SingleChoiceQuestion(data) {
-        var _this = _super.call(this, data) || this;
-        _this.options = data.options;
-        _this.hasOther = data.hasOther;
-        _this.otherValue = data.otherValue;
-        return _this;
-    }
-    return SingleChoiceQuestion;
-}(AbstractQuestion));
-exports.SingleChoiceQuestion = SingleChoiceQuestion;
-var ChoiceQuestionOption = /** @class */ (function () {
-    function ChoiceQuestionOption(data) {
-        this.value = data.value;
-        this.selected = data.selected;
-    }
-    return ChoiceQuestionOption;
-}());
+// export class UserSessionReflections {
+//   userId: string;
+//   sessionId: string;
+//   reflections: AbstractQuestion[];
+//   constructor(data: any) {
+//     this.userId = data.userId;
+//     this.sessionId = data.sessionId;
+//     this.reflections = data.reflections.map((reflection: any) => {
+//       switch (reflection.questionType) {
+//         case QuestionType.YNQuestion:
+//           return new YNQuestion(reflection);
+//         case QuestionType.MultiChoiceQuestion:
+//           return new MultiChoiceQuestion(reflection);
+//         case QuestionType.SingleChoiceQuestion:
+//           return new SingleChoiceQuestion(reflection);
+//         default:
+//           return null;
+//       }
+//     });
+//   }
+//   toClient = (): { userId: string; sessionId: string; reflections: any[] } => {
+//     return {
+//       userId: this.userId,
+//       sessionId: this.sessionId,
+//       reflections: this.reflections.map((reflection) => {
+//         switch (reflection.questionType) {
+//           case QuestionType.YNQuestion:
+//             return new YNQuestion(reflection).toClient();
+//           case QuestionType.MultiChoiceQuestion:
+//             return new MultiChoiceQuestion(reflection).toClient();
+//           case QuestionType.SingleChoiceQuestion:
+//             return new SingleChoiceQuestion(reflection).toClient();
+//           default:
+//             break;
+//         }
+//       }),
+//     };
+//   };
+// }
+// export abstract class AbstractQuestion {
+//   id: string;
+//   prompt: string;
+//   questionType: QuestionType;
+//   // dateAnswered: DateTime;
+//   constructor(data: any) {
+//     this.id = data._id || data.id;
+//     this.prompt = data.prompt;
+//     // this.dateAnswered = data.dateAnswered;
+//     this.questionType = data.questionType;
+//   }
+// }
+// export class YNQuestion extends AbstractQuestion {
+//   yes: string;
+//   no: string;
+//   onYes: AbstractQuestion;
+//   onNo: AbstractQuestion;
+//   constructor(data: any) {
+//     super(data);
+//     // console.log(data);
+//     this.yes = data.yes;
+//     this.no = data.no;
+//     this.onYes = data.onYes;
+//     this.onNo = data.onNo;
+//   }
+//   toClient = () => {
+//     return {
+//       id: this.id,
+//       prompt: this.prompt,
+//       questionType: this.questionType,
+//       yes: this.yes,
+//       no: this.no,
+//       onYes: this.onYes, //Todo
+//       onNo: this.onNo, //Todo
+//     };
+//   };
+// }
+// export class MultiChoiceQuestion extends AbstractQuestion {
+//   options: ChoiceQuestionOption[];
+//   hasOther: boolean;
+//   otherValue: ChoiceQuestionOption;
+//   constructor(data: any) {
+//     super(data);
+//     this.options = data.options;
+//     this.hasOther = data.hasOther;
+//     this.otherValue = data.otherValue;
+//   }
+//   toClient = () => {
+//     return {
+//       id: this.id,
+//       prompt: this.prompt,
+//       questionType: this.questionType,
+//       options: this.options.map((option) => option.toClient()),
+//       hasOther: this.hasOther,
+//       otherValue: this.otherValue.toClient(),
+//     };
+//   };
+// }
+// export class SingleChoiceQuestion extends AbstractQuestion {
+//   options: ChoiceQuestionOption[];
+//   hasOther: boolean;
+//   otherValue: ChoiceQuestionOption;
+//   constructor(data: any) {
+//     super(data);
+//     this.options = data.options;
+//     this.hasOther = data.hasOther;
+//     this.otherValue = data.otherValue;
+//   }
+//   toClient = () => {
+//     return {
+//       id: this.id,
+//       prompt: this.prompt,
+//       questionType: this.questionType,
+//       options: this.options.map((option) => option.toClient()),
+//       hasOther: this.hasOther,
+//       otherValue: this.otherValue.toClient(),
+//     };
+//   };
+// }
+// class ChoiceQuestionOption {
+//   value: string;
+//   selected: boolean;
+//   constructor(data: any) {
+//     this.value = data.value;
+//     this.selected = data.selected;
+//   }
+//   toClient = () => {
+//     return {
+//       value: this.value,
+//       selected: this.selected,
+//     };
+//   };
+// }
+// export enum QuestionType {
+//   YNQuestion = "ynQuestion",
+//   MultiChoiceQuestion = "multiChoiceQuestion",
+//   SingleChoiceQuestion = "singleChoiceQuestion",
+// }

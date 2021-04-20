@@ -1,17 +1,30 @@
 version: "3"
 services:
   backend:
+    environment:
+      - NODE_ENV=production
+    restart: always
     build: .
     ports:
       - "4000:4000"
     links:
       - mongo
+    secrets:
+      - ssl_cert
+      - ssl_cert_private_key
+
   mongo:
     image: "mongo"
     volumes:
       - teactactive-db-data:/data/db
     ports:
       - "27018:27017"
+
+secrets:
+  ssl_cert:
+    file: /run/secrets/ssl_cert
+  ssl_cert_private_key:
+    file: /run/secrets/ssl_cert_private_key
 
 volumes:
   teactactive-db-data:

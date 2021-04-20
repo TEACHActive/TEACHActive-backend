@@ -1,5 +1,3 @@
-import express from "express";
-import { DateTime, Interval } from "luxon";
 import { Document } from "mongoose";
 import { UserModel } from "../../models/userModel";
 import { User } from "./types";
