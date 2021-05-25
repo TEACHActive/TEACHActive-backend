@@ -60,8 +60,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 require("dotenv").config();
-// import fs from "fs";
-// import https from "https";
+var fs_1 = __importDefault(require("fs"));
+var https_1 = __importDefault(require("https"));
 var express_1 = __importDefault(require("express"));
 var errorhandler_1 = __importDefault(require("errorhandler"));
 var config_1 = require("./config");
@@ -70,58 +70,88 @@ var Controller = __importStar(require("./controllers"));
 var mongoose_1 = __importDefault(require("mongoose"));
 var cors_1 = __importDefault(require("cors"));
 var app = express_1.default();
-var baseEndpoint = "/";
-app.use(cors_1.default());
 app.use(config_1.config);
-var url = "mongodb://" + Const.DB_HOST + ":" + Const.DB_PORT + "/" + Const.DB_NAME;
-var dev_url = "mongodb://localhost:" + Const.DB_PORT + "/" + Const.DB_NAME;
-var controllers = [
-    Controller.user,
-    Controller.sessions,
-    Controller.reflections,
-];
-controllers.forEach(function (controller) { return app.use(baseEndpoint, controller); });
-app.get("/", function (req, res) {
-    console.log("Hello World");
-    res.end("Hello World");
-});
+// const whitelist = [""]
+// const options: cors.CorsOptions = {
+//   allowedHeaders: [
+//     'Origin',
+//     'X-Requested-With',
+//     'Content-Type',
+//     'Accept',
+//     'X-Access-Token',
+//   ],
+//   credentials: true,
+//   methods: 'GET,HEAD,OPTIONS,PUT,PATCH,POST,DELETE',
+//   origin: function(origin, callback){
+//     // allow requests with no origin
+//     if(!origin) return callback(null, true);
+//     if(whitelist.indexOf(origin) === -1){
+//       var message = 'The CORS policy for this origin doesn\'t'  +
+//                 'allow access from the particular origin.';
+//       return callback(new Error(message), false);
+//     }
+//     return callback(null, true);
+//   },
+//   preflightContinue: false,
+// };
+app.use(cors_1.default());
+app.options("*", function (req, res, next) {
+    next();
+}, cors_1.default());
 //=====Helper Functuons=====
-var CreateServer = function () { return __awaiter(void 0, void 0, void 0, function () {
-    var DEV_PORT, DEV_PORT;
+var CreateServer = function (mongoose) { return __awaiter(void 0, void 0, void 0, function () {
+    var baseEndpoint, controllers, server, DEV_PORT_1, key, cert, options;
     return __generator(this, function (_a) {
+        baseEndpoint = "/";
+        controllers = [
+            Controller.edusense,
+            Controller.user,
+            Controller.sessions,
+            Controller.reflections,
+            Controller.metadata,
+        ];
+        controllers.forEach(function (controller) {
+            return app.use(baseEndpoint, function (req, res, next) {
+                req.mongoose = mongoose;
+                next();
+            }, controller);
+        });
+        app.get(baseEndpoint, function (req, res) {
+            console.log("Hello World");
+            res.end("Hello World");
+        });
         if (app.get("env") === "development") {
-            DEV_PORT = Const.PORT;
+            DEV_PORT_1 = Const.PORT;
             app.use(errorhandler_1.default());
-            app.listen(DEV_PORT);
-            console.log("Running a DEV API server at http://localhost:" + DEV_PORT); // eslint-disable-line
+            server = app.listen(DEV_PORT_1, function () {
+                console.log("Running a DEV API server at http://localhost:" + DEV_PORT_1); // eslint-disable-line
+            });
         }
         else {
-            // const key = fs.readFileSync(`${Const.CERT_DIR}/privkey.pem`);
-            // const cert = fs.readFileSync(`${Const.CERT_DIR}/cert.pem`);
-            // const options = {
-            //   key: key,
-            //   cert: cert
-            // };
-            // const server = https.createServer(options, app);
-            // server.listen(Const.PORT, () => {
-            //   console.log('Server starting on port: ' + Const.PORT); // eslint-disable-line
-            // });
-            console.error("prodution not set up yet");
-            DEV_PORT = Const.PORT;
-            app.use(errorhandler_1.default());
-            app.listen(DEV_PORT);
-            console.log("Running a DEV API server at http://localhost:" + DEV_PORT); // eslint-disable-line
+            key = fs_1.default.readFileSync(Const.CERT_DIR + "/ssl_cert_private_key");
+            cert = fs_1.default.readFileSync(Const.CERT_DIR + "/ssl_cert");
+            options = {
+                key: key,
+                cert: cert,
+            };
+            server = https_1.default.createServer(options, app);
+            server.listen(Const.PORT, function () {
+                console.log("Server starting on port: " + Const.PORT); // eslint-disable-line
+            });
         }
         return [2 /*return*/];
     });
 }); };
-mongoose_1.default
-    .connect(process.env.NODE_ENV === "production" ? url : dev_url, {
+var mongooseConnectionOptions = {
     useNewUrlParser: true,
     useCreateIndex: true,
     useUnifiedTopology: true,
     useFindAndModify: false,
-})
-    .then(function () {
-    CreateServer();
+};
+var url = "mongodb://" + Const.DB_HOST + ":" + Const.DB_PORT + "/" + Const.DB_NAME;
+var dev_url = "mongodb://localhost:" + Const.DB_PORT + "/" + Const.DB_NAME;
+mongoose_1.default
+    .connect(process.env.NODE_ENV === "production" ? url : dev_url, mongooseConnectionOptions)
+    .then(function (mongoose) {
+    CreateServer(mongoose);
 });

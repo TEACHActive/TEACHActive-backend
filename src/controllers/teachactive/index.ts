@@ -13,7 +13,6 @@ const baseEndpoint = "/teachactive";
  * Test Endpoint
  */
 app.get(`${baseEndpoint}`, function (req, res) {
-  console.log(`${baseEndpoint}`);
   res.end("Hello TEACHctive");
 });
 
@@ -22,7 +21,6 @@ app.get(`${baseEndpoint}`, function (req, res) {
  */
 app.get(`${baseEndpoint}/:id`, async (req: any, res) => {
   const { mongoose } = req;
-  console.log(mongoose);
 
   const sessionID = req.params.id;
   if (sessionID === undefined) {

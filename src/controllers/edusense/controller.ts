@@ -1,29 +1,31 @@
 import axios from "axios";
 import { DurationUnit } from "luxon";
-import { SessionModel } from "../../models/sessionModel";
-import { Response } from "../types";
-import { getAxiosConfig } from "../util";
+
 import {
-  BaseSession,
-  BodyPart,
   Channel,
-  SessionResponse,
   SitStand,
+  BodyPart,
+  BaseSession,
+  SessionResponse,
   VideoFrameSession,
 } from "./types";
 import {
-  calculateArmPosesFromFrames,
   calculateInstructorInFrame,
+  calculateArmPosesFromFrames,
 } from "./util";
+import { Response } from "../types";
+import { getAxiosConfig } from "../util";
+import { SessionModel } from "../../models/sessionModel";
 
-export const getSessionsByUID = async (uid: string) => {
+export const getAllSessions = async () => {
   const data = JSON.stringify({
     query: `{
-                sessions(keyword: "${uid}") { 
+                sessions { 
                     id
                     createdAt {
                         unixSeconds
                     }
+                    keyword
                 }
             }`,
     variables: {},
@@ -45,8 +47,54 @@ export const getSessionsByUID = async (uid: string) => {
   return new Response(true, baseSessionResponse.sessions);
 };
 
+export const getSessionsByUID = async (uid: string) => {
+  const data = JSON.stringify({
+    query: `{
+                sessions(keyword: "${uid}") { 
+                    id
+                    createdAt {
+                        unixSeconds
+                    }
+                    keyword
+                }
+            }`,
+    variables: {},
+  });
+
+  const config = getAxiosConfig("post", "/query", data);
+
+  const response = await axios.request(config);
+
+  const baseSessionResponse = new SessionResponse<BaseSession>(
+    {
+      sessions: JSON.parse(response.data.response).data.sessions,
+      success: response.data.success,
+    },
+    BaseSession
+  );
+  if (!baseSessionResponse.success) {
+    return new Response(false, null, 404, "Failed to get sessions");
+  }
+  return new Response(true, baseSessionResponse.sessions);
+};
+
 export const getSessionsWithMetadataByUID = async (uid: string) => {
   const sessions = await SessionModel.find({ keyword: uid }).exec();
+  const baseSessionResponse = new SessionResponse<BaseSession>(
+    {
+      sessions: sessions,
+      success: true,
+    },
+    BaseSession
+  );
+  if (!baseSessionResponse.success) {
+    return new Response(false, null, 404, "Failed to get sessions");
+  }
+  return new Response(true, baseSessionResponse.sessions);
+};
+
+export const getAllSessionsWithMetadata = async () => {
+  const sessions = await SessionModel.find().exec();
   const baseSessionResponse = new SessionResponse<BaseSession>(
     {
       sessions: sessions,
@@ -208,9 +256,13 @@ export const getInstructorMovementInSession = async (
       //If that person is not found calculate the instructor again
       instructorInCurrentFrame = calculateInstructorInFrame(frame);
     }
+    let timestamp = frame.timestamp
+      .diff(initialDateTime, durationUnit)
+      .toObject();
+    timestamp[durationUnit] = Math.round(timestamp[durationUnit] || 0);
     return {
       instructor: instructorInCurrentFrame,
-      timestamp: frame.timestamp.diff(initialDateTime, durationUnit).toObject(),
+      timestamp: timestamp,
     };
   });
 
@@ -243,6 +295,16 @@ export const getStudentSitVsStandInSession = async (
   const sitStandData = studentVideoFrames.map((frame) => {
     const sitStandNumbers = frame.people.reduce(
       (acc, person) => {
+        const personHasLowerBody =
+          person.body.bodyParts.get(BodyPart.RAnkle)?.confident &&
+          person.body.bodyParts.get(BodyPart.LAnkle)?.confident;
+        if (!personHasLowerBody && person.sitStand === SitStand.Error) {
+          //We will quantify this as a sit pose since there are some desks that occulude lower bodies
+          return {
+            ...acc,
+            sitNumber: ++acc.sitNumber,
+          };
+        }
         return {
           sitNumber: acc.sitNumber + (person.sitStand === SitStand.Sit ? 1 : 0),
           standNumber:
@@ -258,9 +320,14 @@ export const getStudentSitVsStandInSession = async (
       }
     );
 
+    let timeDiff = frame.timestamp
+      .diff(initialDateTime, durationUnit)
+      .toObject();
+    timeDiff[durationUnit] = Math.round(timeDiff[durationUnit] || 0);
+
     return {
       sitStand: sitStandNumbers,
-      timeDiff: frame.timestamp.diff(initialDateTime, durationUnit).toObject(),
+      timeDiff: timeDiff,
     };
   });
 
@@ -333,4 +400,49 @@ export const getFramesBySessionId = async (
   }
 
   return new Response(true, videoFrameSessionResponse.sessions);
+};
+
+export const setSessionName = async (sessionId: string, name: string) => {
+  const doc = await SessionModel.findByIdAndUpdate(
+    sessionId,
+    [
+      {
+        $set: {
+          "metadata.name": {
+            $ifNull: [name, name],
+          },
+        },
+      },
+    ],
+    { new: true }
+  );
+
+  return new Response(true, new BaseSession(doc));
+};
+
+export const setSessionPerformance = async (
+  sessionId: string,
+  performance: string
+) => {
+  const doc = await SessionModel.findByIdAndUpdate(
+    sessionId,
+    [
+      {
+        $set: {
+          "metadata.performance": {
+            $ifNull: [performance, performance],
+          },
+        },
+      },
+    ],
+    { new: true }
+  );
+
+  if (doc === null) {
+    return new Response(false, null, 404, "Session not found");
+  }
+
+  console.log(48, performance);
+
+  return new Response(true, new BaseSession(doc));
 };

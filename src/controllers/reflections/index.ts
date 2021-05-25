@@ -58,8 +58,6 @@ app.put(`${baseEndpoint}/:uid/:sessionId`, async (req, res) => {
     );
 
     res.status(200);
-    res.json(updatedReflection);
-    console.log(updatedReflection);
 
     return;
   } catch (err) {
@@ -103,7 +101,6 @@ app.get(`${baseEndpoint}/:uid/:sessionId`, async (req, res) => {
       userId: uid,
       sessionId: sessionId,
     });
-    console.log(matchingReflection);
 
     if (!matchingReflection) {
       const errorMsg = `User with id: ${uid} and sessionId ${sessionId} not found`;

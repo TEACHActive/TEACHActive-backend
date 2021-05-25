@@ -63,7 +63,6 @@ import { DateTime } from "luxon";
 
 //   constructor(data: any) {
 //     super(data);
-//     // console.log(data);
 //     this.yes = data.yes;
 //     this.no = data.no;
 //     this.onYes = data.onYes;

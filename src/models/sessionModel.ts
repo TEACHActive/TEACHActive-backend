@@ -2,7 +2,7 @@ import mongoose, { Schema } from "mongoose";
 
 const MetadataSchema = new Schema({
   name: String,
-  preformance: Number,
+  performance: Number,
 });
 
 export const SessionModel = mongoose.model(

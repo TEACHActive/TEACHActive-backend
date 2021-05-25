@@ -12,7 +12,7 @@ export const getPerformanceBySessionId = async (sessionId: string) => {
   const baseSession = new BaseSession(session);
 
   if (!baseSession.performance) {
-    return new Response(false, null, 404, "No preformance set for session");
+    return new Response(false, null, 404, "No performance set for session");
   }
 
   return new Response(true, baseSession);
@@ -20,12 +20,12 @@ export const getPerformanceBySessionId = async (sessionId: string) => {
 
 export const updatePerformanceBySessionId = async (
   sessionId: string,
-  preformance: number
+  performance: number
 ) => {
   const updatedSession = await SessionModel.findByIdAndUpdate(
     sessionId,
     {
-      $set: { "metadata.preformance": preformance },
+      $set: { "metadata.performance": performance },
     },
     { new: true }
   ).exec();
@@ -37,7 +37,7 @@ export const updatePerformanceBySessionId = async (
   const baseSession = new BaseSession(updatedSession);
 
   if (!baseSession.performance) {
-    return new Response(false, null, 404, "No preformance set for session");
+    return new Response(false, null, 404, "No performance set for session");
   }
 
   return new Response(true, baseSession);

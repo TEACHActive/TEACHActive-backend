@@ -34,8 +34,12 @@ export const calculateArmPosesFromFrames = (
         id: person.openposeId,
       };
     });
+    let timeDiff = frame.timestamp
+      .diff(initialDateTime, durationUnit)
+      .toObject();
+    timeDiff[durationUnit] = Math.round(timeDiff[durationUnit] || 0);
     return {
-      timeDiff: frame.timestamp.diff(initialDateTime, durationUnit).toObject(),
+      timeDiff: timeDiff,
       armPoseCount: {
         handsRaised: armPosePersonId.filter(
           (personPose) => personPose.pose === ArmPose.HandsRaised

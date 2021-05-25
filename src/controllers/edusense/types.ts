@@ -17,20 +17,22 @@ export class BaseSession {
   createdAt: DateTime;
   name: string;
   performance: number | null;
+  keyword?: string;
 
   constructor(data: any) {
     this.id = data.id;
     this.createdAt = this.getCreatedAtFromData(data);
     this.name = this.getNameFromData(data);
     this.performance = this.getPerformanceFromData(data);
+    this.keyword = data.keyword;
   }
 
   private getPerformanceFromData(data: any): number | null {
     if (data.performance) {
-      return data.preformance;
+      return data.performance;
     }
-    if (data.metadata && data.metadata.preformance) {
-      return data.metadata.preformance;
+    if (data.metadata && data.metadata.performance) {
+      return data.metadata.performance;
     }
     return null;
   }
@@ -60,12 +62,12 @@ export class BaseSession {
   }
 
   private getNameFromData(data: any): string {
-    if (data.name) {
-      return data.name;
-    }
     if (data.metadata && data.metadata.name) {
       //Getting directly from database
       return data.metadata.name;
+    }
+    if (data.name) {
+      return data.name;
     }
     if (DateTime.isDateTime(data.createdAt)) {
       return data.createdAt.toLocaleString();

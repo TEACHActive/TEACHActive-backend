@@ -3,13 +3,19 @@ import { Response } from "../types";
 import {
   getNumberOfFramesOfArmPosesInSession,
   getStudentAttendenceStatsInSession,
-  getSessionsWithMetadataByUID,
   getInstructorMovementInSession,
   getStudentSitVsStandInSession,
   getArmPosesInSession,
   getFramesBySessionId,
+  getSessionsByUID,
+  getAllSessions,
+  setSessionName,
+  setSessionPerformance,
+  getSessionsWithMetadataByUID,
+  getAllSessionsWithMetadata,
 } from "./controller";
 import { ParseChannel } from "./util";
+import * as Constants from "../../constants";
 
 const app = express();
 const baseEndpoint = "/edusense";
@@ -18,7 +24,6 @@ const baseEndpoint = "/edusense";
  * Test Endpoint
  */
 app.get(`${baseEndpoint}`, async function (req, res) {
-  console.log(`${baseEndpoint}`);
   // const { mongoose } = req;
 
   // const sessions = await SessionModel.find().exec();
@@ -34,9 +39,15 @@ app.get(getSessionsByUIDEndpoint, async function (req, res) {
   const { uid } = req.params;
 
   let response;
-
   try {
-    response = await getSessionsWithMetadataByUID(uid);
+    //Check to see if UID matches an admin UID
+    if (Constants.ADMIN_LIST.includes(uid)) {
+      //User making request is an admin
+      response = await getAllSessionsWithMetadata();
+    } else {
+      //User making request is not an admin
+      response = await getSessionsWithMetadataByUID(uid);
+    }
   } catch (error) {
     response = new Response(
       false,
@@ -138,8 +149,8 @@ app.get(getArmPosesInSessionEndpoint, async function (req, res) {
 /**
  * Get Student Attendance In Session
  */
-const getStudentAttendenceInSessionEndpoint = `${baseEndpoint}/attendance/:sessionId`;
-app.get(getStudentAttendenceInSessionEndpoint, async function (req, res) {
+const getStudentAttendenceStatsInSessionEndpoint = `${baseEndpoint}/attendance/:sessionId`;
+app.get(getStudentAttendenceStatsInSessionEndpoint, async function (req, res) {
   const { sessionId } = req.params;
 
   let response;
@@ -200,6 +211,61 @@ app.get(getStudentSitVsStandInSessionEndpoint, async function (req, res) {
       "Server error when getting Sit vs Stand"
     );
   }
+
+  res.statusCode = response.statusCode;
+  res.json(response);
+});
+
+/**
+ * Update a session name
+ */
+app.put(`${baseEndpoint}/sessions/name`, async (req, res) => {
+  const { sessionId, name } = req.body;
+
+  let response;
+
+  try {
+    if (sessionId === undefined) {
+      return new Response(false, null, 400, "id must be defined");
+    }
+    response = await setSessionName(sessionId, name);
+  } catch (error) {
+    response = new Response(
+      false,
+      null,
+      500,
+      "Server error when updating session name"
+    );
+  }
+
+  res.statusCode = response.statusCode;
+  res.json(response);
+});
+
+/**
+ * Update a session performance
+ */
+app.put(`${baseEndpoint}/sessions/performance`, async (req, res) => {
+  const { sessionId, performance } = req.body;
+
+  let response;
+
+  try {
+    if (sessionId === undefined) {
+      return new Response(false, null, 400, "id must be defined");
+    }
+    response = await setSessionPerformance(sessionId, performance);
+  } catch (error) {
+    response = new Response(
+      false,
+      null,
+      500,
+      "Server error when updating session performance",
+      error
+    );
+  }
+
+  console.log(response);
 
   res.statusCode = response.statusCode;
   res.json(response);

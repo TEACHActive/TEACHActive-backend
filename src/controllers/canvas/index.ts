@@ -23,10 +23,8 @@ app.get(`${baseEndpoint}/avg_grade`, async (req, res) => {
     req.query.startDateISO as string
   );
   const durationDays: number = parseInt(req.query.durationDays as string);
-  // console.log(req.query.startDateISO + "|");
 
   const endDate = startDate.plus({ days: durationDays });
-  // console.log(endDate.toLocaleString(), startDate.toLocaleString());
 
   const maxNumAssignments = 100;
   const maxNumSubmissions = 100;
@@ -54,10 +52,6 @@ app.get(`${baseEndpoint}/avg_grade`, async (req, res) => {
         }
         return true;
       }
-    );
-
-    console.log(
-      canvasAssignmentsInRange.map((assign: Canvas_Assignment) => assign.id)
     );
 
     const submissionPromises = canvasAssignmentsInRange.map(

@@ -13,14 +13,13 @@ const baseEndpoint = "/metadata";
  * Test Endpoint
  */
 app.get(`${baseEndpoint}`, async function (req, res) {
-  console.log(`${baseEndpoint}`);
   res.end("Hello metadata");
 });
 
 /**
  * Get Performance by sessionId
  */
-const getPerformanceBySessionIdEndpoint = `${baseEndpoint}/preformance/:sessionId`;
+const getPerformanceBySessionIdEndpoint = `${baseEndpoint}/performance/:sessionId`;
 app.get(getPerformanceBySessionIdEndpoint, async function (req, res) {
   const { sessionId } = req.params;
 
@@ -44,15 +43,15 @@ app.get(getPerformanceBySessionIdEndpoint, async function (req, res) {
 /**
  * Set Performance by sessionId
  */
-const updatePerformanceBySessionIdEndpoint = `${baseEndpoint}/preformance/:sessionId`;
+const updatePerformanceBySessionIdEndpoint = `${baseEndpoint}/performance/:sessionId`;
 app.put(updatePerformanceBySessionIdEndpoint, async function (req, res) {
   const { sessionId } = req.params;
-  const { preformance } = req.body;
+  const { performance } = req.body;
 
   let response;
 
   try {
-    response = await updatePerformanceBySessionId(sessionId, preformance);
+    response = await updatePerformanceBySessionId(sessionId, performance);
   } catch (error) {
     response = new Response(
       false,
