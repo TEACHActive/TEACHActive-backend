@@ -5,6 +5,9 @@ import {
   Better_ReflectionsModel,
   HandRaisesReflectionModel,
   ReflectionsModel,
+  ReflectionDoc,
+  ReflectionSection,
+  ReflectionQuestion,
 } from "../../models/reflectionsModel";
 
 import * as Constants from "../../constants";
@@ -13,25 +16,24 @@ const app = express();
 
 const baseEndpoint = "/reflections";
 
-const YNQuestion = (yes: string, no: string) => {
+const YNQuestion = () => {
   return {
     yes: {
       value: "",
-      label: yes,
+      label: "",
       selected: false,
     },
     no: {
       value: "",
-      label: no,
-      selected: false,
+      label: "",
+      selected: true,
     },
   };
 };
-const DefaultYNQuestion = YNQuestion("", "");
+const DefaultYNQuestion = YNQuestion();
 
 const MultiChoiceQuestion = (
   options: {
-    value: string;
     label: string;
     selected: boolean;
   }[],
@@ -39,46 +41,56 @@ const MultiChoiceQuestion = (
   otherValue: string = ""
 ) => {
   return {
-    options: options,
+    options: options.map((option) => {
+      return { ...option, value: option.label };
+    }),
     hasOther: hasOther,
     otherValue: otherValue,
   };
 };
 const DefaultMultiChoiceQuestion = MultiChoiceQuestion(
-  [{ value: "", label: "", selected: false }],
-  false,
-  ""
+  [
+    { label: "A", selected: false },
+    { label: "B", selected: true },
+    { label: "C", selected: false },
+  ],
+  true,
+  "Test Extra"
 );
 
 const SingleChoiceQuestion = (
   options: {
     value: string;
-    label: string;
     selected: boolean;
   }[],
   hasOther: boolean = false,
   otherValue: string = ""
 ) => {
   return {
-    options: options,
+    options: options.map((option) => {
+      return { ...option, label: option.value };
+    }),
     hasOther: hasOther,
     otherValue: otherValue,
   };
 };
 const DefaultSingleChoiceQuestion = SingleChoiceQuestion(
-  [{ value: "", label: "", selected: false }],
-  false,
-  ""
+  [
+    { value: "Value A", selected: false },
+    { value: "Value B", selected: true },
+  ],
+  true,
+  "otherValue"
 );
 
-const FreeResponseQuestion = (label: string, value: string) => {
+const FreeResponseQuestion = (value: string) => {
   return {
-    value: value,
-    label: label,
-    selected: false,
+    feild: value,
   };
 };
-const DefaultFreeResponseQuestion = FreeResponseQuestion("", "");
+const DefaultFreeResponseQuestion = FreeResponseQuestion("This is a test");
+
+console.log(55, DefaultFreeResponseQuestion);
 
 const LikertQuestion = (
   minValue: number = 1,
@@ -87,45 +99,133 @@ const LikertQuestion = (
   isSet: boolean = false
 ) => {
   return {
-    value: 1,
-    minValue: 1,
-    maxValue: 5,
-    isSet: false,
+    value: value,
+    minValue: minValue,
+    maxValue: maxValue,
+    isSet: isSet,
   };
 };
 const DefaultLikertQuestion = LikertQuestion();
 
-const baseReflectionSections = [
+const baseReflectionSections: ReflectionSection[] = [
   {
     name: "handRaises",
     title: "Hand Raises",
     questions: [
       {
+        id: "q0",
         value: "",
-        priority: 0,
+        priority: 1,
         selected: true,
+        required: true,
+        placeholder: "",
         onSelected: {
           prompt: "This is a prompt",
           questionType: "singleChoiceQuestion",
-          ynQuestion: DefaultYNQuestion,
-          multiChoiceQuestion: DefaultMultiChoiceQuestion,
+          ynQuestion: null,
+          multiChoiceQuestion: null,
           singleChoiceQuestion: DefaultSingleChoiceQuestion,
-          freeResponseQuestion: DefaultFreeResponseQuestion,
+          freeResponseQuestion: null,
+          likertQuestion: null,
+        },
+      },
+      {
+        id: "q1",
+        value: "",
+        priority: 0,
+        selected: true,
+        required: true,
+        placeholder: "Placeholder",
+        onSelected: {
+          prompt: "This is a prompt (y/n)",
+          questionType: "ynQuestion",
+          ynQuestion: DefaultYNQuestion,
+          multiChoiceQuestion: null,
+          singleChoiceQuestion: null,
+          freeResponseQuestion: null,
+          likertQuestion: null,
+        },
+      },
+      {
+        id: "q2",
+        value: "",
+        priority: 0,
+        selected: true,
+        required: true,
+        placeholder: "Placeholder",
+        onSelected: {
+          prompt: "This is a prompt (multiChoiceQuestion)",
+          questionType: "multiChoiceQuestion",
+          ynQuestion: null,
+          multiChoiceQuestion: DefaultMultiChoiceQuestion,
+          singleChoiceQuestion: null,
+          freeResponseQuestion: null,
+          likertQuestion: null,
+        },
+      },
+      {
+        id: "q3",
+        value: "",
+        priority: 0,
+        selected: true,
+        required: true,
+        placeholder: "Placeholder",
+        onSelected: {
+          prompt: "This is a prompt (freeResponseQuestion)",
+          questionType: "freeResponseQuestion",
+          ynQuestion: null,
+          multiChoiceQuestion: null,
+          singleChoiceQuestion: null,
+          freeResponseQuestion: { feild: "Testing 23" },
+          likertQuestion: null,
+        },
+      },
+      {
+        id: "q4",
+        value: "",
+        priority: 0,
+        selected: true,
+        required: true,
+        placeholder: "Placeholder",
+        onSelected: {
+          prompt: "This is a prompt (likertQuestion)",
+          questionType: "likertQuestion",
+          ynQuestion: null,
+          multiChoiceQuestion: null,
+          singleChoiceQuestion: null,
+          freeResponseQuestion: null,
           likertQuestion: DefaultLikertQuestion,
+        },
+      },
+      {
+        id: "q5",
+        value: "",
+        priority: 0,
+        selected: true,
+        required: true,
+        placeholder: "Placeholder",
+        onSelected: {
+          prompt: "This is a prompt (likertQuestion)",
+          questionType: "likertQuestion",
+          ynQuestion: null,
+          multiChoiceQuestion: null,
+          singleChoiceQuestion: null,
+          freeResponseQuestion: null,
+          likertQuestion: LikertQuestion(1, 10, 3),
         },
       },
     ],
   },
-  {
-    name: "studentSpeech",
-    title: "Student Speech",
-    questions: [],
-  },
-  {
-    name: "instructorSpeech",
-    title: "Instructor Speech",
-    questions: [],
-  },
+  // {
+  //   name: "studentSpeech",
+  //   title: "Student Speech",
+  //   questions: [],
+  // },
+  // {
+  //   name: "instructorSpeech",
+  //   title: "Instructor Speech",
+  //   questions: [],
+  // },
 ];
 
 /**
@@ -134,13 +234,7 @@ const baseReflectionSections = [
 app.put(`${baseEndpoint}/:uid/:sessionId`, async (req, res) => {
   console.log("Create/Update a new reflection");
   const { uid, sessionId } = req.params;
-  let reflections = baseReflectionSections;
-  //Update reflections as necessary
-  if (req.params.reflections && Array.isArray(req.params.reflections)) {
-    req.params.reflections.forEach((incomingReflection) => {
-      console.log(incomingReflection);
-    });
-  }
+
   if (uid === undefined) {
     console.error("id must be defined");
     res.status(400);
@@ -161,44 +255,130 @@ app.put(`${baseEndpoint}/:uid/:sessionId`, async (req, res) => {
   }
 
   try {
-    const matchingReflection = await Better_ReflectionsModel.findOne({
+    // {
+    //   _id: 61698a700a7a734fa9b54777,
+    //   userId: 'JxEDspL0SYQhXjfPDXhMaZRZAux1',
+    //   sessionId: '60913c2f4f34c900012e80cf',
+    //   reflectionSections: [
+    //     {
+    //       _id: 61698a700a7a734fa9b54778,
+    //       name: 'handRaises',
+    //       title: 'Hand Raises',
+    //       questions: [Array]
+    //     }
+    //   ],
+    //   __v: 0
+    // }
+
+    let updatedReflectionSections: ReflectionSection[] = [
+      ...baseReflectionSections,
+    ].map((section) => {
+      const updatedQuestions = section.questions.map((reflectionQuestion) => {
+        const updatingR: ReflectionQuestion = req.body.find(
+          (incomingReflection: ReflectionQuestion) =>
+            incomingReflection.id === reflectionQuestion.id
+        );
+        return updatingR ?? reflectionQuestion;
+      });
+      section.questions = updatedQuestions;
+      return section;
+    });
+    console.log(1, {
       userId: uid,
       sessionId: sessionId,
     });
 
+    const matchingReflection = await Better_ReflectionsModel.findOne({
+      userId: uid,
+      sessionId: sessionId,
+    });
+    console.log(2, matchingReflection);
+
     if (!matchingReflection) {
-      const newReflection = new Better_ReflectionsModel({
-        userId: uid,
-        sessionId: sessionId,
-        reflections: reflections,
-      });
-      const savedReflection = await newReflection.save();
-      res.status(201);
-      res.json(savedReflection);
+      res.status(404);
+      res.json({ error: "Matching reflection doc not found" });
       return;
     }
+
+    console.log(3, updatedReflectionSections);
+
+    matchingReflection.reflectionSections = updatedReflectionSections;
+    console.log(4, matchingReflection);
 
     const updatedReflection = await Better_ReflectionsModel.findOneAndUpdate(
       {
         userId: uid,
         sessionId: sessionId,
       },
-      { reflectionSections: reflections },
-      { upsert: true, new: true }
+      {
+        $set: {
+          reflectionSections: updatedReflectionSections,
+        },
+      },
+      { new: true },
+      (err, doc, raw) => {
+        console.log("doc");
+        console.log(doc);
+        console.log(raw);
+        console.log(err);
+
+        // if (err) {
+        //   //Try creating a new one since it presumable cant be found
+        // }
+      }
     );
 
     res.status(200);
     res.json(updatedReflection);
+
     return;
   } catch (err) {
     console.error(err);
     res.status(500);
     res.json({
-      error: "error when creating/updating reflection",
+      error: "error when updating reflection",
       detail: JSON.stringify(err),
     });
     return;
   }
+});
+
+/**
+ * Create reflections
+ */
+app.post(`${baseEndpoint}/:uid/:sessionId`, async (req, res) => {
+  console.log("Create a new reflection");
+  const { uid, sessionId } = req.params;
+
+  if (uid === undefined) {
+    console.error("id must be defined");
+    res.status(400);
+    res.json({
+      error: "Must Provide userId",
+      detail: "Must Provide userId",
+    });
+    return;
+  }
+  if (sessionId === undefined) {
+    console.error("sessionId must be defined");
+    res.status(400);
+    res.json({
+      error: "Must Provide sessionId",
+      detail: "Must Provide sessionId",
+    });
+    return;
+  }
+
+  const newReflection = new Better_ReflectionsModel({
+    userId: uid,
+    sessionId: sessionId,
+    reflectionSections: baseReflectionSections,
+  });
+
+  const savedReflection = await newReflection.save();
+  res.status(201);
+  res.json(savedReflection);
+  return;
 });
 
 /**
@@ -233,7 +413,7 @@ app.get(`${baseEndpoint}/:uid/:sessionId`, async (req, res) => {
     });
 
     if (!matchingReflection) {
-      const errorMsg = `User with id: ${uid} and sessionId ${sessionId} not found`;
+      const errorMsg = `Doc matching user with id: ${uid} and sessionId ${sessionId} not found`;
       console.error(errorMsg);
       res.status(404);
       res.json({
@@ -243,6 +423,8 @@ app.get(`${baseEndpoint}/:uid/:sessionId`, async (req, res) => {
       return;
     }
     res.status(200);
+    console.log(matchingReflection);
+
     res.json(matchingReflection);
   } catch (err) {
     console.error(err);

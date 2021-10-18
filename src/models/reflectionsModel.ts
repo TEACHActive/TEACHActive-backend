@@ -9,13 +9,12 @@ const NestedChoiceQuestionOptionSchema = {
 };
 
 const ChoiceQuestionOptionSchema = new Schema({
-  value: {
-    //The response to the question
-    type: String,
-    required: true,
-  },
+  id: String, // Unique question identifer used to update responses to questions
+  value: String, //The response to the question
   priority: Number, //The order of each question in the list (eg. can reorder questions this way). Higher is closer to top
   selected: Boolean, //If the question should be displayed
+  required: Boolean,
+  placeholder: String,
   onSelected: new Schema({
     prompt: {
       type: String,
@@ -33,23 +32,23 @@ const ChoiceQuestionOptionSchema = new Schema({
     multiChoiceQuestion: {
       options: [NestedChoiceQuestionOptionSchema],
       hasOther: Boolean,
-      otherValue: NestedChoiceQuestionOptionSchema,
+      otherValue: String,
       required: false,
     },
     singleChoiceQuestion: {
       options: [NestedChoiceQuestionOptionSchema],
       hasOther: Boolean,
-      otherValue: NestedChoiceQuestionOptionSchema,
+      otherValue: String,
       required: false,
     },
     freeResponseQuestion: {
-      feild: NestedChoiceQuestionOptionSchema,
+      feild: String,
       required: false,
     },
     likertQuestion: {
-      value: NestedChoiceQuestionOptionSchema,
-      minValue: NestedChoiceQuestionOptionSchema,
-      maxValue: NestedChoiceQuestionOptionSchema,
+      value: Number,
+      minValue: Number,
+      maxValue: Number,
       required: false,
     },
   }),
@@ -95,7 +94,7 @@ export const QuestionSchema = new Schema({
     otherValue: ChoiceQuestionOptionSchema,
   },
   freeResponseQuestion: {
-    feild: ChoiceQuestionOptionSchema,
+    feild: String,
   },
 });
 
@@ -158,7 +157,70 @@ const Better_ReflectionsSchema = new Schema({
   reflectionSections: [Better_ReflectionSectionSchema],
 });
 
-const Better_ReflectionsModel = mongoose.model(
+export interface ReflectionQuestion {
+  id: string; // Unique question identifer used to update responses to questions
+  value: string; //The response to the question
+  priority: number; //The order of each question in the list (eg. can reorder questions this way). Higher is closer to top
+  selected: boolean; //If the question should be displayed
+  required: boolean;
+  placeholder: string;
+  onSelected: {
+    prompt: string;
+    questionType: string;
+    ynQuestion: {
+      yes: {
+        value: string;
+        label: string;
+        selected: boolean;
+      };
+      no: {
+        value: string;
+        label: string;
+        selected: boolean;
+      };
+    } | null;
+    multiChoiceQuestion: {
+      options: {
+        value: string;
+        label: string;
+        selected: boolean;
+      }[];
+      hasOther: boolean;
+      otherValue: string;
+    } | null;
+    singleChoiceQuestion: {
+      options: {
+        value: string;
+        label: string;
+        selected: boolean;
+      }[];
+      hasOther: boolean;
+      otherValue: string;
+    } | null;
+    freeResponseQuestion: {
+      feild: string;
+    } | null;
+    likertQuestion: {
+      value: number;
+      minValue: number;
+      maxValue: number;
+    } | null;
+  };
+}
+
+export interface ReflectionSection {
+  name: string;
+  title: string;
+  questions: ReflectionQuestion[];
+}
+
+export interface ReflectionDoc extends mongoose.Document {
+  userId: string;
+  sessionId: string;
+  reflectionSections: ReflectionSection[];
+}
+
+const Better_ReflectionsModel = mongoose.model<ReflectionDoc>(
   "Better_ReflectionsModel",
   Better_ReflectionsSchema
 );
