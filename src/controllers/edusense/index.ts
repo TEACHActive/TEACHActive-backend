@@ -13,9 +13,11 @@ import {
   setSessionPerformance,
   getSessionsWithMetadataByUID,
   getAllSessionsWithMetadata,
+  getStudentSpeechFrameNumberInSession,
 } from "./controller";
 import { ParseChannel } from "./util";
 import * as Constants from "../../constants";
+import { Channel } from "./types";
 
 const app = express();
 const baseEndpoint = "/edusense";
@@ -217,6 +219,83 @@ app.get(getStudentSitVsStandInSessionEndpoint, async function (req, res) {
 });
 
 /**
+ * Get Speech Thresholded data in Session
+ */
+const getStudentSpeechFrameNumberInSessionEndpoint = `${baseEndpoint}/student/speech/:sessionId/:threashold`;
+app.get(
+  getStudentSpeechFrameNumberInSessionEndpoint,
+  async function (req, res) {
+    const { sessionId, threashold } = req.params;
+    let response;
+
+    const threasholdNum = parseFloat(threashold);
+
+    try {
+      response = await getStudentSpeechFrameNumberInSession(
+        sessionId,
+        threasholdNum
+      );
+    } catch (error) {
+      response = new Response(
+        false,
+        null,
+        500,
+        "Server error when getting Student Speech Frame Number In Session"
+      );
+    }
+
+    res.statusCode = response.statusCode;
+    res.json(response);
+  }
+);
+
+/**
+ * Get student Speech data in Session
+ */
+const getStudentSpeechDataInSessionEndpoint = `${baseEndpoint}/student/speech/frames/:sessionId`;
+app.get(getStudentSpeechDataInSessionEndpoint, async function (req, res) {
+  const { sessionId } = req.params;
+  let response;
+
+  try {
+    response = await getFramesBySessionId(sessionId, Channel.Student);
+  } catch (error) {
+    response = new Response(
+      false,
+      null,
+      500,
+      "Server error when getting Student Speech Data In Session"
+    );
+  }
+
+  res.statusCode = response.statusCode;
+  res.json(response);
+});
+
+/**
+ * Get instructor Speech data in Session
+ */
+const getInstructorSpeechDataInSessionEndpoint = `${baseEndpoint}/instructor/speech/frames/:sessionId`;
+app.get(getInstructorSpeechDataInSessionEndpoint, async function (req, res) {
+  const { sessionId } = req.params;
+  let response;
+
+  try {
+    response = await getFramesBySessionId(sessionId, Channel.Instructor);
+  } catch (error) {
+    response = new Response(
+      false,
+      null,
+      500,
+      "Server error when getting Instructor Speech Data In Session"
+    );
+  }
+
+  res.statusCode = response.statusCode;
+  res.json(response);
+});
+
+/**
  * Update a session name
  */
 app.put(`${baseEndpoint}/sessions/name`, async (req, res) => {
@@ -256,16 +335,24 @@ app.put(`${baseEndpoint}/sessions/performance`, async (req, res) => {
     }
     response = await setSessionPerformance(sessionId, performance);
   } catch (error) {
-    response = new Response(
-      false,
-      null,
-      500,
-      "Server error when updating session performance",
-      error
-    );
+    if (typeof error === "string") {
+      response = new Response(
+        false,
+        null,
+        500,
+        "Server error when updating session performance",
+        error
+      );
+    } else {
+      response = new Response(
+        false,
+        null,
+        500,
+        "Server error when updating session performance",
+        ""
+      );
+    }
   }
-
-  console.log(response);
 
   res.statusCode = response.statusCode;
   res.json(response);

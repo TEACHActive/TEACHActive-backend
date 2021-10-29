@@ -8,6 +8,8 @@ import {
   BaseSession,
   SessionResponse,
   VideoFrameSession,
+  AudioFrameSession,
+  VideoFrame,
 } from "./types";
 import {
   calculateInstructorInFrame,
@@ -190,13 +192,12 @@ export const getStudentAttendenceStatsInSession = async (sessionId: string) => {
   }
 
   const studentVideoFrames = framesResponse.data[0].videoFrames;
-
   const statsStudentsDetected = studentVideoFrames.reduce(
-    (acc, frame, _, { length }) => {
+    (acc: any, frame: any, _: any, data: any) => {
       const studentsInFrame = frame.people.length;
       const max = Math.max(acc.max, studentsInFrame);
       const min = Math.min(acc.min, studentsInFrame);
-      const avg = acc.avg + studentsInFrame / length;
+      const avg = acc.avg + studentsInFrame / data.length;
       return {
         max: max,
         min: min,
@@ -211,19 +212,21 @@ export const getStudentAttendenceStatsInSession = async (sessionId: string) => {
   );
 
   const avgSquareDiff = studentVideoFrames.reduce(
-    (acc, frame, _, { length }) => {
+    (acc: any, frame: any, _: any, data: any) => {
       var diff = frame.people.length - statsStudentsDetected.avg;
       var sqrDiff = diff * diff;
-      const avgSqrDiff = acc + sqrDiff / length;
+      const avgSqrDiff = acc + sqrDiff / data.length;
       return avgSqrDiff;
     },
     0
   );
 
-  return new Response(true, {
+  const response = new Response(true, {
     ...statsStudentsDetected,
     stdDev: Math.sqrt(avgSquareDiff),
   });
+
+  return response;
 };
 
 export const getInstructorMovementInSession = async (
@@ -247,10 +250,10 @@ export const getInstructorMovementInSession = async (
   let instructor = calculateInstructorInFrame(instructorVideoFrames[0]);
   const initialDateTime = instructorVideoFrames[0].timestamp;
 
-  const instructorInFrames = instructorVideoFrames.map((frame) => {
+  const instructorInFrames = instructorVideoFrames.map((frame: VideoFrame) => {
     //First look for previous tracking id in frame of instructor
     let instructorInCurrentFrame = frame.people.find(
-      (person) => person.trackingId === instructor?.trackingId
+      (person: any) => person.trackingId === instructor?.trackingId
     );
     if (!instructorInCurrentFrame) {
       //If that person is not found calculate the instructor again
@@ -266,12 +269,14 @@ export const getInstructorMovementInSession = async (
     };
   });
 
-  const instructorXPosInFrames = instructorInFrames.map((instructorFrame) => {
-    return {
-      xPos: instructorFrame.instructor?.body.bodyParts.get(BodyPart.Neck)?.x,
-      timestamp: instructorFrame.timestamp,
-    };
-  });
+  const instructorXPosInFrames = instructorInFrames.map(
+    (instructorFrame: any) => {
+      return {
+        xPos: instructorFrame.instructor?.body.bodyParts.get(BodyPart.Neck)?.x,
+        timestamp: instructorFrame.timestamp,
+      };
+    }
+  );
 
   return new Response(true, instructorXPosInFrames);
 };
@@ -292,9 +297,9 @@ export const getStudentSitVsStandInSession = async (
   }
   const initialDateTime = studentVideoFrames[0].timestamp;
 
-  const sitStandData = studentVideoFrames.map((frame) => {
+  const sitStandData = studentVideoFrames.map((frame: any) => {
     const sitStandNumbers = frame.people.reduce(
-      (acc, person) => {
+      (acc: any, person: any) => {
         const personHasLowerBody =
           person.body.bodyParts.get(BodyPart.RAnkle)?.confident &&
           person.body.bodyParts.get(BodyPart.LAnkle)?.confident;
@@ -362,6 +367,15 @@ export const getFramesBySessionId = async (
                               }
                           } 
                       }
+                      audioFrames(schema: "0.1.0", channel: ${channel}) {
+                          frameNumber
+                          timestamp {
+                              unixSeconds
+                          }
+                          audio {
+                              amplitude
+                          }
+                      }
                   }
               }`,
     variables: {},
@@ -372,6 +386,8 @@ export const getFramesBySessionId = async (
   const response = await axios.request(config);
 
   const edusenseResponse = JSON.parse(response.data.response);
+
+  // return edusenseResponse;
 
   const videoFrameSessionResponse = new SessionResponse<VideoFrameSession>(
     {
@@ -400,6 +416,76 @@ export const getFramesBySessionId = async (
   }
 
   return new Response(true, videoFrameSessionResponse.sessions);
+};
+
+export const getStudentSpeechFrameNumberInSession = async (
+  sessionID: string,
+  threashold: number
+) => {
+  const fps = 15;
+  const secPerMin = 60;
+  //return new Response(true, { frames: secPerMin * fps * 10 });
+
+  const data = JSON.stringify({
+    query: `{
+                  sessions(sessionId: "${sessionID}") { 
+                      id
+                      createdAt { 
+                        unixSeconds
+                      }
+                      audioFrames(schema: "edusense", channel: student) { 
+                          frameNumber
+                          timestamp {
+                              unixSeconds
+                          }
+                          audio {
+                              amplitude
+                          }
+                      }
+                  }
+              }`,
+    variables: {},
+  });
+  console.log(2);
+
+  const config = getAxiosConfig("post", "/query", data);
+  //console.log(config);
+
+  const response = await axios.request(config);
+  console.log(response);
+
+  const edusenseResponse = JSON.parse(response.data.response);
+  console.log(edusenseResponse);
+
+  return new Response<any>(true, edusenseResponse);
+
+  const audioFrameSessionResponse = new SessionResponse<AudioFrameSession>(
+    {
+      sessions:
+        edusenseResponse && edusenseResponse.data
+          ? edusenseResponse.data.sessions
+          : null,
+      success: response.data.success,
+    },
+    AudioFrameSession
+  );
+  if (
+    !audioFrameSessionResponse.success ||
+    !audioFrameSessionResponse.sessions
+  ) {
+    return new Response(false, null, 404, "Failed to get audio frames");
+  }
+
+  if (audioFrameSessionResponse.sessions.length === 0) {
+    return new Response(
+      false,
+      null,
+      500,
+      "Failed to get student audio frames, empty session"
+    );
+  }
+
+  return new Response(true, audioFrameSessionResponse.sessions);
 };
 
 export const setSessionName = async (sessionId: string, name: string) => {
@@ -441,8 +527,6 @@ export const setSessionPerformance = async (
   if (doc === null) {
     return new Response(false, null, 404, "Session not found");
   }
-
-  console.log(48, performance);
 
   return new Response(true, new BaseSession(doc));
 };

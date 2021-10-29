@@ -8,6 +8,8 @@
   "main": "index.js",
   "scripts": {
     "start:dev": "PORT=4001 ts-node-dev --respawn --transpile-only src/index.ts",
+    "build": "tsc",
+    "start": "node build/index.js",
     "kill": "kill -9 $(lsof -t -i:4001)",
     "docker-build": "docker-compose build",
     "docker-up": "docker-compose up",

@@ -16,6 +16,6 @@ export class Response<T> {
     this.data = data;
     this.error = error;
     this.statusCode = statusCode;
-    this.detail = this.detail;
+    this.detail = detail;
   }
 }

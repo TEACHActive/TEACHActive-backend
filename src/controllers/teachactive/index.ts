@@ -4,6 +4,7 @@ import { SessionModel } from "../../models/sessionModel";
 import { UserModel } from "../../models/userModel";
 import { Session } from "./types";
 import MongoClient, { ObjectId } from "mongodb";
+import { Response } from "../types";
 
 const app = express();
 
@@ -112,5 +113,26 @@ const setMetric = (sessionID: string, setMetricObj: object): any => {
     }
   );
 };
+
+const instructorUIDToNameMap = new Map([
+  ["JxEDspL0SYQhXjfPDXhMaZRZAux1", "Test"],
+]);
+
+/**
+ * Get a User's Name
+ */
+app.get(`${baseEndpoint}/name/:uid`, async (req: any, res) => {
+  const { uid } = req.params;
+
+  if (uid === undefined) {
+    console.error("uid must be defined");
+    res.json(new Response(false, null, 404, "uid must be defined as param"));
+    return;
+  }
+
+  const insturctorName = instructorUIDToNameMap.get(uid) || "";
+
+  res.json(new Response(true, { uid: uid, name: insturctorName }));
+});
 
 export { app as sessions };

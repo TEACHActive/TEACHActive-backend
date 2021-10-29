@@ -187,6 +187,7 @@ export interface ReflectionQuestion {
       }[];
       hasOther: boolean;
       otherValue: string;
+      otherSelected: boolean;
     } | null;
     singleChoiceQuestion: {
       options: {
@@ -196,6 +197,7 @@ export interface ReflectionQuestion {
       }[];
       hasOther: boolean;
       otherValue: string;
+      otherSelected: boolean;
     } | null;
     freeResponseQuestion: {
       feild: string;

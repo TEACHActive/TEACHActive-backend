@@ -101,6 +101,17 @@ export class VideoFrameSession extends BaseSession {
   }
 }
 
+export class AudioFrameSession extends BaseSession {
+  audioFrames: AudioFrame[];
+
+  constructor(data: any) {
+    super(data);
+    this.audioFrames = data.audioFrames.map(
+      (audioFrame: any) => new AudioFrame(audioFrame)
+    );
+  }
+}
+
 export class VideoFrame {
   frameNumber: number;
   people: Person[];
@@ -117,6 +128,22 @@ export class VideoFrame {
       ...this,
       people: this.people.map((person) => person.serialize()),
     };
+  };
+}
+
+export class AudioFrame {
+  frameNumber: number;
+  timestamp: DateTime;
+  amplitude: number;
+
+  constructor(data: any) {
+    this.frameNumber = data.frameNumber;
+    this.amplitude = data.audio.amplitude;
+    this.timestamp = DateTime.fromSeconds(data.timestamp.unixSeconds);
+  }
+
+  serialize = () => {
+    return { ...this };
   };
 }
 
