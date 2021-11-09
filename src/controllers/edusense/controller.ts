@@ -1,5 +1,5 @@
 import axios from "axios";
-import { DurationUnit } from "luxon";
+import { DateTime, DurationObject, DurationUnit } from "luxon";
 
 import {
   Channel,
@@ -10,6 +10,8 @@ import {
   VideoFrameSession,
   AudioFrameSession,
   VideoFrame,
+  AudioFrame,
+  Speaker,
 } from "./types";
 import {
   calculateInstructorInFrame,
@@ -114,13 +116,15 @@ export const getArmPosesInSession = async (
   sessionId: string,
   durationUnit: DurationUnit = "minutes"
 ) => {
-  const framesResponse = await getFramesBySessionId(sessionId, Channel.Student);
+  const framesResponse = await getVideoFramesBySessionId(
+    sessionId,
+    Channel.Student
+  );
   if (!framesResponse.success || !framesResponse.data) {
     return framesResponse;
   }
 
   const studentVideoFrames = framesResponse.data[0].videoFrames;
-
   if (studentVideoFrames.length === 0) {
     return new Response(
       false,
@@ -142,7 +146,10 @@ export const getNumberOfFramesOfArmPosesInSession = async (
   sessionId: string,
   durationUnit: DurationUnit = "minutes"
 ) => {
-  const framesResponse = await getFramesBySessionId(sessionId, Channel.Student);
+  const framesResponse = await getVideoFramesBySessionId(
+    sessionId,
+    Channel.Student
+  );
   if (!framesResponse.success || !framesResponse.data) {
     return framesResponse;
   }
@@ -186,7 +193,10 @@ export const getNumberOfFramesOfArmPosesInSession = async (
 };
 
 export const getStudentAttendenceStatsInSession = async (sessionId: string) => {
-  const framesResponse = await getFramesBySessionId(sessionId, Channel.Student);
+  const framesResponse = await getVideoFramesBySessionId(
+    sessionId,
+    Channel.Student
+  );
   if (!framesResponse.success || !framesResponse.data) {
     return framesResponse;
   }
@@ -233,7 +243,7 @@ export const getInstructorMovementInSession = async (
   sessionId: string,
   durationUnit: DurationUnit = "minutes"
 ) => {
-  const framesResponse = await getFramesBySessionId(
+  const framesResponse = await getVideoFramesBySessionId(
     sessionId,
     Channel.Instructor
   );
@@ -259,24 +269,28 @@ export const getInstructorMovementInSession = async (
       //If that person is not found calculate the instructor again
       instructorInCurrentFrame = calculateInstructorInFrame(frame);
     }
-    let timestamp = frame.timestamp
+    let timeDiff = frame.timestamp
       .diff(initialDateTime, durationUnit)
       .toObject();
-    timestamp[durationUnit] = Math.round(timestamp[durationUnit] || 0);
+    timeDiff[durationUnit] = Math.round(timeDiff[durationUnit] || 0);
     return {
       instructor: instructorInCurrentFrame,
-      timestamp: timestamp,
+      timestamp: frame.timestamp,
+      timeDiff: timeDiff,
     };
   });
 
-  const instructorXPosInFrames = instructorInFrames.map(
+  let instructorXPosInFrames = instructorInFrames.map(
     (instructorFrame: any) => {
       return {
         xPos: instructorFrame.instructor?.body.bodyParts.get(BodyPart.Neck)?.x,
         timestamp: instructorFrame.timestamp,
+        timeDiff: instructorFrame.timeDiff,
       };
     }
   );
+
+  instructorXPosInFrames.sort((a, b) => a.timestamp - b.timestamp);
 
   return new Response(true, instructorXPosInFrames);
 };
@@ -285,7 +299,10 @@ export const getStudentSitVsStandInSession = async (
   sessionId: string,
   durationUnit: DurationUnit = "minutes"
 ) => {
-  const framesResponse = await getFramesBySessionId(sessionId, Channel.Student);
+  const framesResponse = await getVideoFramesBySessionId(
+    sessionId,
+    Channel.Student
+  );
   if (!framesResponse.success || !framesResponse.data) {
     return framesResponse;
   }
@@ -296,6 +313,11 @@ export const getStudentSitVsStandInSession = async (
     return new Response(false, null, 404, "No student video frames");
   }
   const initialDateTime = studentVideoFrames[0].timestamp;
+
+  console.log(initialDateTime.toJSDate());
+  console.log(
+    studentVideoFrames[studentVideoFrames.length - 1].timestamp.toJSDate()
+  );
 
   const sitStandData = studentVideoFrames.map((frame: any) => {
     const sitStandNumbers = frame.people.reduce(
@@ -339,7 +361,7 @@ export const getStudentSitVsStandInSession = async (
   return new Response(true, sitStandData);
 };
 
-export const getFramesBySessionId = async (
+export const getVideoFramesBySessionId = async (
   sessionID: string,
   channel: Channel
 ) => {
@@ -367,20 +389,10 @@ export const getFramesBySessionId = async (
                               }
                           } 
                       }
-                      audioFrames(schema: "0.1.0", channel: ${channel}) {
-                          frameNumber
-                          timestamp {
-                              unixSeconds
-                          }
-                          audio {
-                              amplitude
-                          }
-                      }
                   }
               }`,
     variables: {},
   });
-
   const config = getAxiosConfig("post", "/query", data);
 
   const response = await axios.request(config);
@@ -388,6 +400,7 @@ export const getFramesBySessionId = async (
   const edusenseResponse = JSON.parse(response.data.response);
 
   // return edusenseResponse;
+  // console.log(edusenseResponse);
 
   const videoFrameSessionResponse = new SessionResponse<VideoFrameSession>(
     {
@@ -418,25 +431,21 @@ export const getFramesBySessionId = async (
   return new Response(true, videoFrameSessionResponse.sessions);
 };
 
-export const getStudentSpeechFrameNumberInSession = async (
+export const getAudioFramesBySessionId = async (
   sessionID: string,
-  threashold: number
+  channel: Channel
 ) => {
-  const fps = 15;
-  const secPerMin = 60;
-  //return new Response(true, { frames: secPerMin * fps * 10 });
-
   const data = JSON.stringify({
     query: `{
                   sessions(sessionId: "${sessionID}") { 
                       id
                       createdAt { 
-                        unixSeconds
+                        RFC3339
                       }
-                      audioFrames(schema: "edusense", channel: student) { 
+                      audioFrames(schema: "0.1.0", channel: ${channel}) {
                           frameNumber
                           timestamp {
-                              unixSeconds
+                            RFC3339
                           }
                           audio {
                               amplitude
@@ -446,18 +455,12 @@ export const getStudentSpeechFrameNumberInSession = async (
               }`,
     variables: {},
   });
-  console.log(2);
 
   const config = getAxiosConfig("post", "/query", data);
-  //console.log(config);
 
   const response = await axios.request(config);
-  console.log(response);
 
   const edusenseResponse = JSON.parse(response.data.response);
-  console.log(edusenseResponse);
-
-  return new Response<any>(true, edusenseResponse);
 
   const audioFrameSessionResponse = new SessionResponse<AudioFrameSession>(
     {
@@ -481,11 +484,22 @@ export const getStudentSpeechFrameNumberInSession = async (
       false,
       null,
       500,
-      "Failed to get student audio frames, empty session"
+      "Failed to get student frames, empty session"
     );
   }
 
-  return new Response(true, audioFrameSessionResponse.sessions);
+  return new Response(true, audioFrameSessionResponse.sessions[0].audioFrames);
+};
+
+export const getSpeechFrameNumberInSession = async (
+  sessionID: string,
+  channel: Channel,
+  threashold: number
+) => {
+  const fps = 15;
+  const secPerMin = 60;
+
+  return await getAudioFramesBySessionId(sessionID, channel);
 };
 
 export const setSessionName = async (sessionId: string, name: string) => {
@@ -529,4 +543,102 @@ export const setSessionPerformance = async (
   }
 
   return new Response(true, new BaseSession(doc));
+};
+
+export const GetSpeakerDataInSession = async (
+  sessionId: string,
+  minSpeakingAmp: number = 0.005
+): Promise<
+  | Response<null>
+  | Response<
+      {
+        frameNumber: number;
+        speaker: Speaker;
+        timeDiff: DurationObject;
+        timestamp: DateTime;
+      }[]
+    >
+> => {
+  let studentAudioFrames, instructorAudioFrames, response;
+  instructorAudioFrames = await getAudioFramesBySessionId(
+    sessionId,
+    Channel.Instructor
+  );
+  studentAudioFrames = await getAudioFramesBySessionId(
+    sessionId,
+    Channel.Student
+  );
+
+  if (
+    instructorAudioFrames.data &&
+    instructorAudioFrames.data.length > 0 &&
+    studentAudioFrames.data &&
+    studentAudioFrames.data.length > 0
+  ) {
+    const instructorInitialDateTime = instructorAudioFrames.data[0].timestamp;
+    const studentInitialDateTime = studentAudioFrames.data[0].timestamp;
+    instructorAudioFrames = instructorAudioFrames.data.map(
+      (frame: AudioFrame) => {
+        let timeDiff = frame.timestamp
+          .diff(instructorInitialDateTime, "seconds")
+          .toObject();
+        timeDiff["seconds"] = Math.round(timeDiff["seconds"] || 0);
+
+        return {
+          ...frame,
+          timeDiff: timeDiff,
+        };
+      }
+    );
+
+    studentAudioFrames = studentAudioFrames.data.map((frame: AudioFrame) => {
+      let timeDiff = frame.timestamp
+        .diff(studentInitialDateTime, "seconds")
+        .toObject();
+      timeDiff["seconds"] = Math.round(timeDiff["seconds"] || 0);
+
+      return {
+        ...frame,
+        timeDiff: timeDiff,
+      };
+    });
+
+    let speakerData = [];
+    for (
+      let i = 0;
+      i < Math.min(instructorAudioFrames.length, studentAudioFrames.length);
+      i++
+    ) {
+      const insAmp = instructorAudioFrames[i].amplitude;
+      const stuAmp = studentAudioFrames[i].amplitude;
+      let timeDiff = instructorAudioFrames[i].timestamp
+        .diff(instructorInitialDateTime, "seconds")
+        .toObject();
+      timeDiff["seconds"] = Math.round(timeDiff["seconds"] || 0);
+
+      let speaker;
+      if (insAmp < minSpeakingAmp && stuAmp < minSpeakingAmp) {
+        speaker = Speaker.Ambient;
+      } else {
+        speaker = insAmp > stuAmp ? Speaker.Instructor : Speaker.Student;
+      }
+
+      speakerData.push({
+        frameNumber: instructorAudioFrames[i].frameNumber,
+        speaker: speaker,
+        timeDiff: timeDiff,
+        timestamp: instructorAudioFrames[i].timestamp,
+      });
+    }
+    response = new Response(true, speakerData);
+  } else {
+    //Do something...
+    response = new Response(
+      false,
+      null,
+      500,
+      "Either Instructor or Student frames null or empty"
+    );
+  }
+  return response;
 };

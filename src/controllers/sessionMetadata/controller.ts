@@ -2,7 +2,9 @@ import { SessionModel } from "../../models/sessionModel";
 import { BaseSession } from "../edusense/types";
 import { Response } from "../types";
 
-export const getPerformanceBySessionId = async (sessionId: string) => {
+export const getPerformanceBySessionId = async (
+  sessionId: string
+): Promise<Response<number | null>> => {
   const session = await SessionModel.findById(sessionId).exec();
 
   if (!session) {
@@ -15,17 +17,23 @@ export const getPerformanceBySessionId = async (sessionId: string) => {
     return new Response(false, null, 404, "No performance set for session");
   }
 
-  return new Response(true, baseSession);
+  return new Response(true, baseSession.performance);
 };
 
 export const updatePerformanceBySessionId = async (
   sessionId: string,
   performance: number
 ) => {
+  const sess = await SessionModel.findById(sessionId);
+
   const updatedSession = await SessionModel.findByIdAndUpdate(
     sessionId,
     {
-      $set: { "metadata.performance": performance },
+      $set: {
+        metadata: {
+          performance: performance,
+        },
+      },
     },
     { new: true }
   ).exec();

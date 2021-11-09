@@ -52,12 +52,13 @@ app.put(updatePerformanceBySessionIdEndpoint, async function (req, res) {
 
   try {
     response = await updatePerformanceBySessionId(sessionId, performance);
-  } catch (error) {
+  } catch (error: any) {
     response = new Response(
       false,
       null,
       500,
-      "Server error when getting performance"
+      "Server error when getting performance",
+      error.toString()
     );
   }
 

@@ -14,7 +14,7 @@ const baseEndpoint = "/reflections";
  * Update a new reflection
  */
 app.put(`${baseEndpoint}/:uid/:sessionId`, async (req, res) => {
-  console.log("Update a new reflection");
+  // console.log("Update a new reflection");
   const { uid, sessionId } = req.params;
 
   if (uid === undefined) {
@@ -118,7 +118,7 @@ app.put(`${baseEndpoint}/:uid/:sessionId`, async (req, res) => {
  * Create reflections
  */
 app.post(`${baseEndpoint}/:uid/:sessionId`, async (req, res) => {
-  console.log("Create a new reflection");
+  // console.log("Create a new reflection");
   const { uid, sessionId } = req.params;
 
   if (uid === undefined) {
@@ -218,8 +218,6 @@ app.delete(`${baseEndpoint}/:uid/:sessionId`, async (req, res) => {
     },
     { new: true }
   );
-
-  console.log(matchingReflection);
 });
 
 export { app as reflections };

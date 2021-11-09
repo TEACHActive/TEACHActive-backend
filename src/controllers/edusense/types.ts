@@ -139,7 +139,13 @@ export class AudioFrame {
   constructor(data: any) {
     this.frameNumber = data.frameNumber;
     this.amplitude = data.audio.amplitude;
-    this.timestamp = DateTime.fromSeconds(data.timestamp.unixSeconds);
+    //this.timestamp = DateTime.fromSeconds(data.timestamp.unixSeconds);
+    this.timestamp = DateTime.fromISO(data.timestamp.RFC3339);
+    // console.log(data.timestamp.RFC3339);
+
+    // if (this.timestamp.year > 2021) {
+    //   console.log("WTF", data.timestamp.RFC3339);
+    // }
   }
 
   serialize = () => {
@@ -247,4 +253,10 @@ export enum SitStand {
 export enum Channel {
   Student = "student",
   Instructor = "instructor",
+}
+
+export enum Speaker {
+  Student = "student",
+  Instructor = "instructor",
+  Ambient = "ambient",
 }

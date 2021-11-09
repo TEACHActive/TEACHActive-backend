@@ -6,18 +6,20 @@ import {
   getInstructorMovementInSession,
   getStudentSitVsStandInSession,
   getArmPosesInSession,
-  getFramesBySessionId,
   getSessionsByUID,
   getAllSessions,
   setSessionName,
   setSessionPerformance,
   getSessionsWithMetadataByUID,
   getAllSessionsWithMetadata,
-  getStudentSpeechFrameNumberInSession,
+  getSpeechFrameNumberInSession,
+  getVideoFramesBySessionId,
+  getAudioFramesBySessionId,
+  GetSpeakerDataInSession,
 } from "./controller";
 import { ParseChannel } from "./util";
 import * as Constants from "../../constants";
-import { Channel } from "./types";
+import { AudioFrame, Channel, Speaker } from "./types";
 
 const app = express();
 const baseEndpoint = "/edusense";
@@ -82,7 +84,7 @@ app.get(getFramesBySessionIdEndpoint, async function (req, res) {
         "Must select channel of type student or instructor"
       );
     } else {
-      response = await getFramesBySessionId(sessionId, parsedChannel);
+      response = await getVideoFramesBySessionId(sessionId, parsedChannel);
     }
   } catch (error) {
     response = new Response(
@@ -218,36 +220,37 @@ app.get(getStudentSitVsStandInSessionEndpoint, async function (req, res) {
   res.json(response);
 });
 
-/**
- * Get Speech Thresholded data in Session
- */
-const getStudentSpeechFrameNumberInSessionEndpoint = `${baseEndpoint}/student/speech/:sessionId/:threashold`;
-app.get(
-  getStudentSpeechFrameNumberInSessionEndpoint,
-  async function (req, res) {
-    const { sessionId, threashold } = req.params;
-    let response;
+// /**
+//  * Get Speech Thresholded data in Session
+//  */
+// const getStudentSpeechFrameNumberInSessionEndpoint = `${baseEndpoint}/student/speech/:sessionId/:threashold`;
+// app.get(
+//   getStudentSpeechFrameNumberInSessionEndpoint,
+//   async function (req, res) {
+//     const { sessionId, threashold } = req.params;
+//     let response;
 
-    const threasholdNum = parseFloat(threashold);
+//     const threasholdNum = parseFloat(threashold);
 
-    try {
-      response = await getStudentSpeechFrameNumberInSession(
-        sessionId,
-        threasholdNum
-      );
-    } catch (error) {
-      response = new Response(
-        false,
-        null,
-        500,
-        "Server error when getting Student Speech Frame Number In Session"
-      );
-    }
+//     try {
+//       response = await getSpeechFrameNumberInSession(
+//         sessionId,
+//         Channel.Student,
+//         threasholdNum
+//       );
+//     } catch (error) {
+//       response = new Response(
+//         false,
+//         null,
+//         500,
+//         "Server error when getting Student Speech Frame Number In Session"
+//       );
+//     }
 
-    res.statusCode = response.statusCode;
-    res.json(response);
-  }
-);
+//     res.statusCode = response.statusCode;
+//     res.json(response);
+//   }
+// );
 
 /**
  * Get student Speech data in Session
@@ -258,7 +261,24 @@ app.get(getStudentSpeechDataInSessionEndpoint, async function (req, res) {
   let response;
 
   try {
-    response = await getFramesBySessionId(sessionId, Channel.Student);
+    response = await getAudioFramesBySessionId(sessionId, Channel.Student);
+
+    if (response.data && response.data.length > 0) {
+      const initialDateTime = response.data[0].timestamp;
+      response.data = response.data.map((frame: AudioFrame) => {
+        let timeDiff = frame.timestamp
+          .diff(initialDateTime, "minutes")
+          .toObject();
+        // console.log(
+        //   frame.timestamp.toISOTime(),
+        //   initialDateTime.toISOTime(),
+        //   frame.timestamp.diff(initialDateTime, "minutes").toObject().minutes
+        // );
+
+        timeDiff["minutes"] = Math.round(timeDiff["minutes"] || 0);
+        return { ...frame, timeDiff: timeDiff, timestamp: frame.timestamp };
+      });
+    }
   } catch (error) {
     response = new Response(
       false,
@@ -267,6 +287,8 @@ app.get(getStudentSpeechDataInSessionEndpoint, async function (req, res) {
       "Server error when getting Student Speech Data In Session"
     );
   }
+
+  response.data?.sort((a: any, b: any) => a.timestamp - b.timestamp);
 
   res.statusCode = response.statusCode;
   res.json(response);
@@ -281,13 +303,129 @@ app.get(getInstructorSpeechDataInSessionEndpoint, async function (req, res) {
   let response;
 
   try {
-    response = await getFramesBySessionId(sessionId, Channel.Instructor);
+    response = await getAudioFramesBySessionId(sessionId, Channel.Instructor);
+
+    if (response.data && response.data.length > 0) {
+      const initialDateTime = response.data[0].timestamp;
+      response.data = response.data
+        .map((frame: AudioFrame) => {
+          let timeDiff = frame.timestamp
+            .diff(initialDateTime, "minutes")
+            .toObject();
+          timeDiff["minutes"] = Math.round(timeDiff["minutes"] || 0);
+          return { ...frame, timeDiff: timeDiff };
+        })
+        .sort((a, b) => a.frameNumber - b.frameNumber);
+    }
   } catch (error) {
     response = new Response(
       false,
       null,
       500,
       "Server error when getting Instructor Speech Data In Session"
+    );
+  }
+
+  res.statusCode = response.statusCode;
+  res.json(response);
+});
+
+/**
+ * Get speaker data in session
+ */
+const getSpeakerDataInSessionEndpoint = `${baseEndpoint}/speech/speaker/:sessionId`;
+app.get(getSpeakerDataInSessionEndpoint, async function (req, res) {
+  const { sessionId } = req.params;
+
+  let response;
+
+  try {
+    response = await GetSpeakerDataInSession(sessionId);
+  } catch (error) {
+    response = new Response(
+      false,
+      null,
+      500,
+      "Server error when getting Instructor Speech Data In Session"
+    );
+  }
+
+  res.statusCode = 500;
+  res.json(response);
+});
+
+/**
+ * Get Total speech times in session
+ */
+const getTotalSpeechTimesInSessionEndpoint = `${baseEndpoint}/speech/time/:sessionId`;
+app.get(getTotalSpeechTimesInSessionEndpoint, async (req, res) => {
+  const { sessionId } = req.params;
+
+  let response;
+
+  try {
+    if (sessionId === undefined) {
+      return new Response(false, null, 400, "id must be defined");
+    }
+
+    let _data = await GetSpeakerDataInSession(sessionId);
+
+    _data.data?.sort((a, b) => a.frameNumber - b.frameNumber);
+
+    let speechInFrames = new Map([
+      [Speaker.Instructor, 0],
+      [Speaker.Student, 0],
+      [Speaker.Ambient, 0],
+    ]);
+
+    let lastSpeaker = _data.data?.[0].speaker || Speaker.Student;
+    let lastFramenumberSwitch = _data.data?.[0].frameNumber;
+
+    _data.data?.forEach((frame) => {
+      if (lastSpeaker !== frame.speaker) {
+        speechInFrames.set(
+          lastSpeaker,
+          (speechInFrames.get(lastSpeaker) || 0) +
+            frame.frameNumber -
+            (lastFramenumberSwitch || 0)
+        );
+
+        //Switch Speakers
+        lastSpeaker = frame.speaker;
+        lastFramenumberSwitch = frame.frameNumber || lastFramenumberSwitch;
+      }
+    });
+
+    // const framesData = _data.data;
+    // let maxSpeakingTimePossible = 50 * 60; //base is 50 min classes;
+
+    // if (framesData) {
+    //   console.log(
+    //     framesData[0].timestamp, //WTF, (User SLKB, 11/2) has 1944 timestamp???
+    //     framesData[framesData.length - 1].timestamp
+    //   );
+    //   maxSpeakingTimePossible = framesData[0].timestamp.diff(
+    //     framesData[framesData.length - 1].timestamp,
+    //     "seconds"
+    //   ).seconds; // Some issue, need to cap this for sanity check
+    // }
+
+    const cameraFPS = 15.0;
+
+    response = new Response(true, {
+      studentSpeechInSeconds:
+        speechInFrames.get(Speaker.Student) || 0 / cameraFPS,
+      instructorSpeechInSeconds:
+        speechInFrames.get(Speaker.Instructor) || 0 / cameraFPS,
+      ambiantNoiseInSeconds:
+        speechInFrames.get(Speaker.Ambient) || 0 / cameraFPS,
+    });
+  } catch (error) {
+    response = new Response(
+      false,
+      null,
+      500,
+      "Server error when getting total speech time"
     );
   }
 
