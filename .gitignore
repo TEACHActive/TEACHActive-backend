@@ -104,6 +104,7 @@ dist
 .tern-port
 
 secrets
+.secrets
 
 .vscode
 

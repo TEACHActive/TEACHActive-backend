@@ -1,13 +1,22 @@
-import { DateTime } from "luxon";
+import { DateTime, Duration } from "luxon";
 
 export class SessionResponse<T extends BaseSession> {
   success: boolean;
   sessions: T[];
 
-  constructor(data: any, private sessionType: new (data: any) => T) {
+  constructor(
+    data: any,
+    private sessionType: new (
+      data: any,
+      initialDateTime: DateTime,
+      fps: number
+    ) => T,
+    initialDateTime: DateTime,
+    fps: number
+  ) {
     this.success = data.success;
     this.sessions = data.sessions.map(
-      (session: any) => new sessionType(session)
+      (session: any) => new sessionType(session, initialDateTime, fps)
     );
   }
 }
@@ -55,6 +64,9 @@ export class BaseSession {
     if (data.createdAt.unixSeconds) {
       return DateTime.fromSeconds(data.createdAt.unixSeconds);
     }
+    if (data.createdAt.RFC3339) {
+      return DateTime.fromISO(data.createdAt.RFC3339);
+    }
     if (DateTime.fromISO(data.createdAt).isValid) {
       return DateTime.fromISO(data.createdAt);
     }
@@ -93,10 +105,10 @@ export class BaseSession {
 export class VideoFrameSession extends BaseSession {
   videoFrames: VideoFrame[];
 
-  constructor(data: any) {
+  constructor(data: any, initialDateTime: DateTime, fps: number) {
     super(data);
     this.videoFrames = data.videoFrames.map(
-      (videoFrame: any) => new VideoFrame(videoFrame)
+      (videoFrame: any) => new VideoFrame(videoFrame, initialDateTime, fps)
     );
   }
 }
@@ -104,10 +116,10 @@ export class VideoFrameSession extends BaseSession {
 export class AudioFrameSession extends BaseSession {
   audioFrames: AudioFrame[];
 
-  constructor(data: any) {
+  constructor(data: any, initialDateTime: DateTime, fps: number) {
     super(data);
     this.audioFrames = data.audioFrames.map(
-      (audioFrame: any) => new AudioFrame(audioFrame)
+      (audioFrame: any) => new AudioFrame(audioFrame, initialDateTime, fps)
     );
   }
 }
@@ -117,10 +129,26 @@ export class VideoFrame {
   people: Person[];
   timestamp: DateTime;
 
-  constructor(data: any) {
+  constructor(data: any, initialDateTime: DateTime, fps: number) {
     this.frameNumber = data.frameNumber;
     this.people = data.people.map((person: any) => new Person(person));
-    this.timestamp = DateTime.fromSeconds(data.timestamp.unixSeconds);
+    // this.timestamp = DateTime.fromSeconds(data.timestamp.unixSeconds);
+
+    this.timestamp = initialDateTime.plus(
+      Duration.fromObject({ seconds: Math.round(this.frameNumber / fps) })
+    );
+    // if (data.frameNumber % 500 == 0) {
+    //   console.log(
+    //     Math.round(this.frameNumber / fps),
+    //     this.timestamp.invalidReason
+    //   );
+
+    //   console.log(
+    //     this.frameNumber / fps,
+    //     initialDateTime.toJSDate().toString(),
+    //     this.timestamp.toJSDate().toString()
+    //   );
+    // }
   }
 
   serialize = () => {
@@ -136,13 +164,14 @@ export class AudioFrame {
   timestamp: DateTime;
   amplitude: number;
 
-  constructor(data: any) {
+  constructor(data: any, initialDateTime: DateTime, fps: number) {
     this.frameNumber = data.frameNumber;
     this.amplitude = data.audio.amplitude;
     //this.timestamp = DateTime.fromSeconds(data.timestamp.unixSeconds);
-    this.timestamp = DateTime.fromISO(data.timestamp.RFC3339);
-    // console.log(data.timestamp.RFC3339);
-
+    // this.timestamp = DateTime.fromISO(data.timestamp.RFC3339);
+    this.timestamp = initialDateTime.plus(
+      Duration.fromObject({ seconds: this.frameNumber / fps })
+    );
     // if (this.timestamp.year > 2021) {
     //   console.log("WTF", data.timestamp.RFC3339);
     // }

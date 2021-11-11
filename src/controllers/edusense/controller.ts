@@ -21,6 +21,12 @@ import { Response } from "../types";
 import { getAxiosConfig } from "../util";
 import { SessionModel } from "../../models/sessionModel";
 
+const defaultInitalDateTime = DateTime.fromJSDate(
+  new Date("01 January 1999 00:01 UTC")
+);
+let initialDateTime: DateTime = defaultInitalDateTime;
+const defaultFPS = 15;
+
 export const getAllSessions = async () => {
   const data = JSON.stringify({
     query: `{
@@ -38,12 +44,19 @@ export const getAllSessions = async () => {
   const config = getAxiosConfig("post", "/query", data);
 
   const response = await axios.request(config);
+
+  initialDateTime = DateTime.fromISO(
+    response?.data?.sessions[0].createdAt.RFC3339
+  );
+
   const baseSessionResponse = new SessionResponse<BaseSession>(
     {
       sessions: JSON.parse(response.data.response).data.sessions,
       success: response.data.success,
     },
-    BaseSession
+    BaseSession,
+    initialDateTime,
+    defaultFPS
   );
   if (!baseSessionResponse.success) {
     return new Response(false, null, 404, "Failed to get sessions");
@@ -68,13 +81,17 @@ export const getSessionsByUID = async (uid: string) => {
   const config = getAxiosConfig("post", "/query", data);
 
   const response = await axios.request(config);
-
+  initialDateTime = DateTime.fromISO(
+    response?.data?.sessions[0].createdAt.RFC3339
+  );
   const baseSessionResponse = new SessionResponse<BaseSession>(
     {
       sessions: JSON.parse(response.data.response).data.sessions,
       success: response.data.success,
     },
-    BaseSession
+    BaseSession,
+    initialDateTime,
+    defaultFPS
   );
   if (!baseSessionResponse.success) {
     return new Response(false, null, 404, "Failed to get sessions");
@@ -89,7 +106,9 @@ export const getSessionsWithMetadataByUID = async (uid: string) => {
       sessions: sessions,
       success: true,
     },
-    BaseSession
+    BaseSession,
+    initialDateTime,
+    defaultFPS
   );
   if (!baseSessionResponse.success) {
     return new Response(false, null, 404, "Failed to get sessions");
@@ -104,7 +123,9 @@ export const getAllSessionsWithMetadata = async () => {
       sessions: sessions,
       success: true,
     },
-    BaseSession
+    BaseSession,
+    initialDateTime,
+    defaultFPS
   );
   if (!baseSessionResponse.success) {
     return new Response(false, null, 404, "Failed to get sessions");
@@ -258,7 +279,7 @@ export const getInstructorMovementInSession = async (
   }
 
   let instructor = calculateInstructorInFrame(instructorVideoFrames[0]);
-  const initialDateTime = instructorVideoFrames[0].timestamp;
+  initialDateTime = instructorVideoFrames[0].timestamp;
 
   const instructorInFrames = instructorVideoFrames.map((frame: VideoFrame) => {
     //First look for previous tracking id in frame of instructor
@@ -312,12 +333,12 @@ export const getStudentSitVsStandInSession = async (
   if (studentVideoFrames.length === 0) {
     return new Response(false, null, 404, "No student video frames");
   }
-  const initialDateTime = studentVideoFrames[0].timestamp;
+  initialDateTime = studentVideoFrames[0].timestamp;
 
-  console.log(initialDateTime.toJSDate());
-  console.log(
-    studentVideoFrames[studentVideoFrames.length - 1].timestamp.toJSDate()
-  );
+  // console.log(initialDateTime.toJSDate());
+  // console.log(
+  //   studentVideoFrames[studentVideoFrames.length - 1].timestamp.toJSDate()
+  // );
 
   const sitStandData = studentVideoFrames.map((frame: any) => {
     const sitStandNumbers = frame.people.reduce(
@@ -370,12 +391,12 @@ export const getVideoFramesBySessionId = async (
                   sessions(sessionId: "${sessionID}") { 
                       id
                       createdAt { 
-                        unixSeconds
+                        RFC3339
                       }
                       videoFrames(schema: "0.1.0", channel: ${channel}) { 
                           frameNumber
                           timestamp {
-                              unixSeconds
+                            RFC3339
                           }
                           people { 
                               openposeId 
@@ -399,8 +420,9 @@ export const getVideoFramesBySessionId = async (
 
   const edusenseResponse = JSON.parse(response.data.response);
 
-  // return edusenseResponse;
-  // console.log(edusenseResponse);
+  initialDateTime = DateTime.fromISO(
+    edusenseResponse?.data?.sessions[0].createdAt.RFC3339
+  );
 
   const videoFrameSessionResponse = new SessionResponse<VideoFrameSession>(
     {
@@ -410,7 +432,9 @@ export const getVideoFramesBySessionId = async (
           : null,
       success: response.data.success,
     },
-    VideoFrameSession
+    VideoFrameSession,
+    initialDateTime,
+    defaultFPS
   );
   if (
     !videoFrameSessionResponse.success ||
@@ -461,6 +485,11 @@ export const getAudioFramesBySessionId = async (
   const response = await axios.request(config);
 
   const edusenseResponse = JSON.parse(response.data.response);
+  if (edusenseResponse?.data?.sessions.length > 0) {
+    initialDateTime = DateTime.fromISO(
+      edusenseResponse?.data?.sessions[0].createdAt.RFC3339
+    );
+  }
 
   const audioFrameSessionResponse = new SessionResponse<AudioFrameSession>(
     {
@@ -470,7 +499,9 @@ export const getAudioFramesBySessionId = async (
           : null,
       success: response.data.success,
     },
-    AudioFrameSession
+    AudioFrameSession,
+    initialDateTime,
+    defaultFPS
   );
   if (
     !audioFrameSessionResponse.success ||
