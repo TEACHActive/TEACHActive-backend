@@ -23,7 +23,7 @@ exports.SessionModel = void 0;
 var mongoose_1 = __importStar(require("mongoose"));
 var MetadataSchema = new mongoose_1.Schema({
     name: String,
-    preformance: Number,
+    performance: Number,
 });
 exports.SessionModel = mongoose_1.default.model("SessionModel", new mongoose_1.Schema({
     keyword: String,
@@ -33,3 +33,4 @@ exports.SessionModel = mongoose_1.default.model("SessionModel", new mongoose_1.S
     schemas: [String],
     metadata: MetadataSchema,
 }), "sessions");
+//# sourceMappingURL=sessionModel.js.map

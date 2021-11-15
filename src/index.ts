@@ -11,8 +11,8 @@ import mongoose from "mongoose";
 import errorHandler from "errorhandler";
 
 import { config } from "./config";
-import * as Const from "./constants";
-import * as Controller from "./controllers";
+import * as Const from "./variables";
+import { appRouters } from "./routers";
 
 const app = express();
 app.use(config);
@@ -28,24 +28,9 @@ app.options(
 
 //=====Helper Functuons=====
 const CreateServer = async (mongoose: mongoose.Mongoose) => {
-  const baseEndpoint = "/";
-
-  const controllers = [
-    Controller.edusense,
-    Controller.sessions,
-    Controller.reflections,
-    Controller.metadata,
-  ];
-  controllers.forEach((controller) =>
-    app.use(
-      baseEndpoint,
-      (req: any, res, next) => {
-        req.mongoose = mongoose;
-        next();
-      },
-      controller
-    )
-  );
+  appRouters.forEach((appRouter) => {
+    app.use(appRouter.endpoint, appRouter.router);
+  });
 
   let server: https.Server | Server;
 
@@ -53,8 +38,8 @@ const CreateServer = async (mongoose: mongoose.Mongoose) => {
     const DEV_PORT = Const.PORT;
     app.use(errorHandler());
 
-    const key = fs.readFileSync(`/run/secrets/ssl_cert_private_key`);
-    const cert = fs.readFileSync(`/run/secrets/ssl_cert`);
+    const key = fs.readFileSync(`${Const.CERT_DIR}/ssl_cert_private_key`);
+    const cert = fs.readFileSync(`${Const.CERT_DIR}/ssl_cert`);
     const options = {
       key: key,
       cert: cert,
@@ -65,8 +50,8 @@ const CreateServer = async (mongoose: mongoose.Mongoose) => {
       console.log(`Running a DEV API server at http://localhost:${DEV_PORT}`); // eslint-disable-line
     });
   } else {
-    const key = fs.readFileSync(`${Const.CERT_DIR}/ssl_cert_private_key`);
-    const cert = fs.readFileSync(`${Const.CERT_DIR}/ssl_cert`);
+    const key = fs.readFileSync(`/app/${Const.CERT_DIR}/ssl_cert_private_key`);
+    const cert = fs.readFileSync(`/app/${Const.CERT_DIR}/ssl_cert`);
     const options = {
       key: key,
       cert: cert,
@@ -79,10 +64,10 @@ const CreateServer = async (mongoose: mongoose.Mongoose) => {
 };
 
 const mongooseConnectionOptions = {
-  useNewUrlParser: true,
   useCreateIndex: true,
-  useUnifiedTopology: true,
+  useNewUrlParser: true,
   useFindAndModify: false,
+  useUnifiedTopology: true,
 };
 
 const url = `mongodb://localhost:${Const.DB_PORT_PROD}/${Const.DB_NAME}`;

@@ -1,22 +1,19 @@
-import mongoose from "mongoose";
+import mongoose, { Schema } from "mongoose";
 
-const Schema = mongoose.Schema;
+export class User {
+  uid: String;
+  email: String;
+  name: String;
 
-const UserSchema = new Schema({
-  dateCreated: {
-    type: Date,
-    required: [true],
-  },
-  name: {
-    type: String,
-    required: [true],
-  },
-  oktaID: {
-    type: String,
-    required: [true],
-  },
-});
+  constructor(data: any) {
+    this.uid = data.uid;
+    this.email = data.email;
+    this.name = data.name;
+  }
+}
 
-const UserModel = mongoose.model("UserModel", UserSchema);
-
-export { UserModel };
+export const UserModel = mongoose.model<User>(
+  "UsernModel",
+  new Schema(User),
+  "users"
+);
