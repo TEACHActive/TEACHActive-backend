@@ -5,7 +5,7 @@ import { MethodType } from "./types";
 import { getAxiosConfig } from "./util";
 import { TokenSign } from "./user/types";
 import * as Constants from "../variables";
-import { Channel, Session, VideoFrame } from "./sessions/types";
+import { AudioFrame, Channel, VideoFrame } from "./sessions/types";
 import { getSessions } from "./sessions/controller";
 
 export const getCameraFPS = (): number => {
@@ -26,21 +26,21 @@ export const isAdminRequest = (tokenSign: TokenSign): boolean => {
 export const userOwnsSession = async (
   sessionId: string,
   tokenSign: TokenSign
-): Promise<Session | null> => {
+): Promise<boolean> => {
   const isAdminRequest = Constants.ADMIN_LIST.includes(tokenSign.uid);
-  if (isAdminRequest) return null;
+  if (isAdminRequest) return true;
 
   const userSessions = await getSessions(tokenSign.uid, isAdminRequest);
   if (!userSessions.data) {
-    return null;
+    return false;
   }
   const matchingSession = userSessions.data.find(
     (session) => session.id === sessionId
   );
   if (matchingSession) {
-    return matchingSession;
+    return true;
   }
-  return null;
+  return false;
 };
 
 export const getVideoFramesBySessionId = async (
@@ -114,4 +114,69 @@ export const getVideoFramesBySessionId = async (
   });
 
   return parsedVideoFrames;
+};
+
+export const getAudioFramesBySessionId = async (
+  sessionID: string,
+  channel: Channel,
+  serialize: boolean = false
+): Promise<AudioFrame[]> => {
+  const data = JSON.stringify({
+    query: `{
+                  sessions(sessionId: "${sessionID}") { 
+                      id
+                      createdAt { 
+                        RFC3339
+                      }
+                      audioFrames(schema: "0.1.0", channel: ${channel}) {
+                          frameNumber
+                          timestamp {
+                            RFC3339
+                          }
+                          audio {
+                              amplitude
+                          }
+                      }
+                  }
+              }`,
+    variables: {},
+  });
+  const config = getAxiosConfig(MethodType.Post, "/query", data);
+
+  const response = await axios.request(config);
+
+  const edusenseResponse = JSON.parse(response.data.response);
+
+  if (
+    !edusenseResponse.data ||
+    !edusenseResponse.data.sessions ||
+    !Array.isArray(edusenseResponse.data.sessions) ||
+    edusenseResponse.data.sessions.length === 0
+  ) {
+    throw new Error("Error when getting sesssions, no matching session");
+  }
+
+  const sessions = edusenseResponse.data.sessions;
+
+  if (
+    !sessions[0].audioFrames ||
+    !Array.isArray(sessions[0].audioFrames) ||
+    sessions[0].audioFrames.length === 0
+  ) {
+    throw new Error("Error when getting audioFrames, no frames");
+  }
+
+  const audioFrames = sessions[0].audioFrames;
+
+  const initialDateTime = DateTime.fromISO(audioFrames[0].timestamp.RFC3339);
+
+  const parsedAudioFrames: AudioFrame[] = audioFrames.map((audioFrame: any) => {
+    const frame = new AudioFrame(audioFrame, initialDateTime, getCameraFPS());
+    if (serialize) {
+      return frame.serialize();
+    }
+    return frame;
+  });
+
+  return parsedAudioFrames;
 };

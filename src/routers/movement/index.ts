@@ -1,11 +1,12 @@
 import express from "express";
 
 import { Response } from "../types";
-import { authenticateToken } from "../middleware";
 import { getInstructorMovementDataInSession } from "./controller";
+import { authenticateToken, checkIfUserOwnsSession } from "../middleware";
 
 const router = express.Router();
 router.use(authenticateToken);
+router.use(checkIfUserOwnsSession);
 
 /**
  * Get Instructor Movement in session
@@ -17,11 +18,13 @@ router.get(getInstructorMovementDataInSessionEndpoint, async (req, res) => {
 
   let response;
   try {
-    response = getInstructorMovementDataInSession(
+    response = await getInstructorMovementDataInSession(
       sessionId,
       parseInt(numSegments)
     );
   } catch (error) {
+    console.error(error);
+
     response = new Response(
       false,
       null,

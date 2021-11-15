@@ -1,9 +1,10 @@
-import { Channel, Session, VideoFrame } from "./types";
+import { AudioFrame, Channel, Session, VideoFrame } from "./types";
 import { Response } from "../types";
 import { SessionModel } from "../../models/sessionModel";
 import {
   getCameraFPS,
   getVideoFramesBySessionId,
+  getAudioFramesBySessionId,
   isAdminRequest,
 } from "../engine";
 import { TokenSign } from "../user/types";
@@ -63,4 +64,37 @@ export const getVideoFramesInSession = async (
   }
   const videoFrames = await getVideoFramesBySessionId(userSession.id, channel);
   return new Response(true, videoFrames);
+};
+
+export const getAudioFramesInSession = async (
+  sessionId: string,
+  channel: Channel | null,
+  tokenSign: TokenSign
+): Promise<Response<AudioFrame[] | null>> => {
+  if (!channel) {
+    return new Response(false, null, 400, "Invalid channel name");
+  }
+
+  const userSessions = await getSessions(
+    tokenSign.uid,
+    isAdminRequest(tokenSign)
+  );
+
+  if (!userSessions.data) {
+    return new Response(false, null, 403, "User has no sessions");
+  }
+
+  const userSession = userSessions.data.find(
+    (session) => session.id === sessionId
+  );
+  if (!userSession) {
+    return new Response(
+      false,
+      null,
+      404,
+      "No matching session for given sessionId and user"
+    );
+  }
+  const audioFrames = await getAudioFramesBySessionId(userSession.id, channel);
+  return new Response(true, audioFrames);
 };

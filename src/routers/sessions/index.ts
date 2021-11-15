@@ -1,11 +1,15 @@
 import express from "express";
 
 import { Response } from "../types";
-import { TokenSign } from "../user/types";
-import { getSessions, getVideoFramesInSession } from "./controller";
-import * as Constants from "../../variables";
-import { authenticateToken } from "../middleware";
 import { ParseChannel } from "../engine";
+import { TokenSign } from "../user/types";
+import * as Constants from "../../variables";
+import {
+  getSessions,
+  getVideoFramesInSession,
+  getAudioFramesInSession,
+} from "./controller";
+import { authenticateToken, checkIfUserOwnsSession } from "../middleware";
 
 const router = express.Router();
 router.use(authenticateToken);
@@ -38,30 +42,67 @@ router.get(getSessionsEndpoint, async (req, res) => {
  * Get VideoFrames in session
  */
 const getVideoFramesInSessionEndpoint = `/videoFrames/:sessionId/:channel`;
-router.get(getVideoFramesInSessionEndpoint, async (req, res) => {
-  const { sessionId, channel } = req.params;
+router.get(
+  getVideoFramesInSessionEndpoint,
+  checkIfUserOwnsSession,
+  async (req, res) => {
+    const { sessionId, channel } = req.params;
 
-  let response;
-  try {
-    const tokenSign: TokenSign = req.user;
-    const parsedChannel = ParseChannel(channel);
-    response = await getVideoFramesInSession(
-      sessionId,
-      parsedChannel,
-      tokenSign
-    );
-  } catch (error) {
-    response = new Response(
-      false,
-      null,
-      500,
-      "Server error when getting videoframes"
-    );
+    let response;
+    try {
+      const tokenSign: TokenSign = req.user;
+      const parsedChannel = ParseChannel(channel);
+      response = await getVideoFramesInSession(
+        sessionId,
+        parsedChannel,
+        tokenSign
+      );
+    } catch (error) {
+      response = new Response(
+        false,
+        null,
+        500,
+        "Server error when getting videoframes"
+      );
+    }
+
+    res.statusCode = response.statusCode;
+    res.json(response);
   }
+);
 
-  res.statusCode = response.statusCode;
-  res.json(response);
-});
+/**
+ * Get AudioFrames in session
+ */
+const getAudioFramesInSessionEndpoint = `/audioFrames/:sessionId/:channel`;
+router.get(
+  getAudioFramesInSessionEndpoint,
+  checkIfUserOwnsSession,
+  async (req, res) => {
+    const { sessionId, channel } = req.params;
+
+    let response;
+    try {
+      const tokenSign: TokenSign = req.user;
+      const parsedChannel = ParseChannel(channel);
+      response = await getAudioFramesInSession(
+        sessionId,
+        parsedChannel,
+        tokenSign
+      );
+    } catch (error) {
+      response = new Response(
+        false,
+        null,
+        500,
+        "Server error when getting audio frames"
+      );
+    }
+
+    res.statusCode = response.statusCode;
+    res.json(response);
+  }
+);
 
 const baseEndpoint = "/sessions";
 export { router, baseEndpoint };

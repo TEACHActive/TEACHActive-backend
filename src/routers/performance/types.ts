@@ -4,6 +4,6 @@ export class SessionPerformance {
 
   constructor(data: any) {
     this.sessionId = data.sessionId;
-    this.performance = data.performance;
+    this.performance = data.performance || null;
   }
 }

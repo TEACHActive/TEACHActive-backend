@@ -5,10 +5,11 @@ import {
   getArmPoseTotalsInSecondsInSession,
 } from "./controller";
 import { Response } from "../types";
-import { authenticateToken } from "../middleware";
+import { authenticateToken, checkIfUserOwnsSession } from "../middleware";
 
 const router = express.Router();
 router.use(authenticateToken);
+router.use(checkIfUserOwnsSession);
 
 /**
  * Get Arm Pose totals in session
