@@ -59,9 +59,9 @@ export const getInstructorMovementDataInSession = async (
       end: currDate.minus({ years: 100 }),
     },
     frameNumber: {
-      begin: Number.MAX_VALUE,
+      begin: Number.MAX_SAFE_INTEGER,
       avg: 0,
-      end: Number.MIN_VALUE,
+      end: Number.MIN_SAFE_INTEGER,
     },
     instructor: {
       avg: {
@@ -69,12 +69,12 @@ export const getInstructorMovementDataInSession = async (
         yPos: 0,
       },
       min: {
-        xPos: Number.MAX_VALUE,
-        yPos: Number.MAX_VALUE,
+        xPos: Number.MAX_SAFE_INTEGER,
+        yPos: Number.MAX_SAFE_INTEGER,
       },
       max: {
-        xPos: Number.MIN_VALUE,
-        yPos: Number.MIN_VALUE,
+        xPos: Number.MIN_SAFE_INTEGER,
+        yPos: Number.MIN_SAFE_INTEGER,
       },
     },
     timeDiff: Duration.fromMillis(0).toObject(),

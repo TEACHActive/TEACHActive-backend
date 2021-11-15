@@ -41,9 +41,9 @@ export const getSpeechDataSession = async (
       end: currDate.minus({ years: 100 }),
     },
     frameNumber: {
-      begin: Number.MAX_VALUE,
+      begin: Number.MAX_SAFE_INTEGER,
       avg: 0,
-      end: Number.MIN_VALUE,
+      end: Number.MIN_SAFE_INTEGER,
     },
     amplitude: {
       min: 1,
@@ -100,9 +100,9 @@ export const getSpeechDataCombinedInSession = async (
       end: currDate.minus({ years: 100 }),
     },
     frameNumber: {
-      begin: Number.MAX_VALUE,
+      begin: Number.MAX_SAFE_INTEGER,
       avg: 0,
-      end: Number.MIN_VALUE,
+      end: Number.MIN_SAFE_INTEGER,
     },
     speakerMap: new Map<Speaker, number>(),
     speakerInSeconds: new SpeakerDataInSecondsFromFrames({}),

@@ -47,8 +47,8 @@ export const getArmPoseDataInSession = async (
 
   const defaultArmPoseStats = {
     avg: 0,
-    max: Number.MIN_VALUE,
-    min: Number.MAX_VALUE,
+    max: Number.MIN_SAFE_INTEGER,
+    min: Number.MAX_SAFE_INTEGER,
   };
   const chunkedArmPoses = chunkArray(
     countArmPosesForFrames(videoFrames),

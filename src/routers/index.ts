@@ -18,6 +18,10 @@ import { router as user, baseEndpoint as userEndpoint } from "./user";
 import { router as auth, baseEndpoint as authEndpoint } from "./auth";
 import { router as speech, baseEndpoint as speechEndpoint } from "./speech";
 import { router as armPose, baseEndpoint as armPoseEndpoint } from "./armPose";
+import {
+  router as attendance,
+  baseEndpoint as attendanceEndpoint,
+} from "./attendance";
 
 export const appRouters = [
   {
@@ -51,5 +55,9 @@ export const appRouters = [
   {
     router: speech,
     endpoint: speechEndpoint,
+  },
+  {
+    router: attendance,
+    endpoint: attendanceEndpoint,
   },
 ];
