@@ -16,21 +16,47 @@ import { TokenSign } from "../user/types";
  */
 export const getSessions = async (
   uid: string,
-  isAdminRequest: boolean
+  isAdminRequest: boolean,
+  limit: number = 0,
+  sortDesc: boolean = false
 ): Promise<Response<Session[] | null>> => {
   const filter = isAdminRequest ? {} : { keyword: uid };
-
-  const sessionModels = await SessionModel.find(filter).exec();
-
+  const sessionModels = await SessionModel.find(filter)
+    .sort({ timestamp: sortDesc ? -1 : 1 })
+    .limit(limit)
+    .exec();
   if (!sessionModels) {
     return new Response(false, null, 404, "Failed to get sessions");
   }
-
   const sessions = sessionModels.map(
     (session) => new Session(session, getCameraFPS())
   );
   const response = new Response<Session[]>(true, sessions);
   return response;
+};
+
+export const updateSessionNameBySessionId = async (
+  sessionId: string,
+  name: string
+): Promise<Response<Session | null>> => {
+  const result = await SessionModel.findByIdAndUpdate(
+    sessionId,
+    [
+      {
+        $set: {
+          "metadata.name": {
+            $ifNull: [name, name],
+          },
+        },
+      },
+    ],
+    { new: true }
+  );
+
+  if (!result) {
+    return new Response(false, null, 500, "Failed to update session name");
+  }
+  return new Response(true, new Session(result, getCameraFPS()));
 };
 
 export const getVideoFramesInSession = async (

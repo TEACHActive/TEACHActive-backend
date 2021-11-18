@@ -3,6 +3,7 @@ import express from "express";
 import { Response } from "../types";
 import { getUser } from "./controller";
 import { authenticateToken } from "../middleware";
+import { TokenSign } from "./types";
 
 const router = express.Router();
 router.use(authenticateToken);
@@ -14,7 +15,9 @@ const getUserEndpoint = ``;
 router.get(getUserEndpoint, async (req, res) => {
   let response;
   try {
-    response = await getUser(req.user);
+    const _req: any = req;
+    const tokenSign: TokenSign = _req.user;
+    response = await getUser(tokenSign);
   } catch (error) {
     response = new Response(
       false,

@@ -88,7 +88,7 @@ export const getVideoFramesBySessionId = async (
     !Array.isArray(edusenseResponse.data.sessions) ||
     edusenseResponse.data.sessions.length === 0
   ) {
-    throw new Error("Error when getting sesssions, no matching session");
+    throw Error("Error when getting sesssions, no matching session");
   }
 
   const sessions = edusenseResponse.data.sessions;
@@ -98,20 +98,25 @@ export const getVideoFramesBySessionId = async (
     !Array.isArray(sessions[0].videoFrames) ||
     sessions[0].videoFrames.length === 0
   ) {
-    throw new Error("Error when getting videoFrames, no frames");
+    throw Error("Error when getting videoFrames, no frames");
   }
 
   const videoFrames = sessions[0].videoFrames;
 
   const initialDateTime = DateTime.fromISO(videoFrames[0].timestamp.RFC3339);
 
-  const parsedVideoFrames: VideoFrame[] = videoFrames.map((videoFrame: any) => {
-    const frame = new VideoFrame(videoFrame, initialDateTime, getCameraFPS());
-    if (serialize) {
-      return frame.serialize();
-    }
-    return frame;
-  });
+  const parsedVideoFrames: VideoFrame[] = videoFrames
+    .map((videoFrame: any, i: number) => {
+      if (i % 5 === 0) {
+        return null;
+      }
+      const frame = new VideoFrame(videoFrame, initialDateTime, getCameraFPS());
+      if (serialize) {
+        return frame.serialize();
+      }
+      return frame;
+    })
+    .filter((frame: any) => !!frame);
 
   return parsedVideoFrames;
 };
@@ -121,31 +126,15 @@ export const getAudioFramesBySessionId = async (
   channel: Channel,
   serialize: boolean = false
 ): Promise<AudioFrame[]> => {
-  const data = JSON.stringify({
-    query: `{
-                  sessions(sessionId: "${sessionID}") { 
-                      id
-                      createdAt { 
-                        RFC3339
-                      }
-                      audioFrames(schema: "0.1.0", channel: ${channel}) {
-                          frameNumber
-                          timestamp {
-                            RFC3339
-                          }
-                          audio {
-                              amplitude
-                          }
-                      }
-                  }
-              }`,
-    variables: {},
-  });
-  const config = getAxiosConfig(MethodType.Post, "/query", data);
+  let edusenseResponse = await makeAudioFrameQuery(sessionID, channel);
 
-  const response = await axios.request(config);
-
-  const edusenseResponse = JSON.parse(response.data.response);
+  if (!edusenseResponse.data) {
+    edusenseResponse = await makeAudioFrameQuery(
+      sessionID,
+      channel,
+      "edusense-audio"
+    );
+  }
 
   if (
     !edusenseResponse.data ||
@@ -179,4 +168,37 @@ export const getAudioFramesBySessionId = async (
   });
 
   return parsedAudioFrames;
+};
+
+const makeAudioFrameQuery = async (
+  sessionID: string,
+  channel: Channel,
+  schema: string = "0.1.0"
+) => {
+  const data = JSON.stringify({
+    query: `{
+      sessions(sessionId: "${sessionID}") {
+          createdAt {
+              RFC3339
+          }
+          audioFrames(schema: "${schema}", channel: ${channel}) {
+              frameNumber
+              timestamp {
+                  RFC3339
+              }
+              audio {
+                  amplitude
+              }
+          }
+      }
+  }`,
+    variables: {},
+  });
+  const config = getAxiosConfig(MethodType.Post, "/query", data);
+
+  const response = await axios.request(config);
+
+  const edusenseResponse = JSON.parse(response.data.response);
+
+  return edusenseResponse;
 };

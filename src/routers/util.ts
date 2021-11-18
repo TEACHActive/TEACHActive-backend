@@ -31,9 +31,34 @@ export const getAxiosConfig = (
  * Returns an array with arrays of the given size.
  *
  * @param myArray {Array} Array to split
+ * @param chunkSize {Integer} Number of groups to chunk into, if falsy (0, null, etc) will return one chunk of all data
+ */
+export function chunkArrayIntoNumberOfGroups<T>(
+  myArray: T[],
+  chunk_size?: number
+) {
+  if (!chunk_size) chunk_size = myArray.length;
+  const numItems = myArray.length / chunk_size;
+  var results = [];
+
+  while (myArray.length) {
+    results.push(myArray.splice(0, numItems));
+  }
+
+  return results;
+}
+
+/**
+ * From: https://ourcodeworld.com/articles/read/278/how-to-split-an-array-into-chunks-of-the-same-size-easily-in-javascript
+ * Returns an array with arrays of the given size.
+ *
+ * @param myArray {Array} Array to split
  * @param chunkSize {Integer} Size of every group
  */
-export function chunkArray<T>(myArray: T[], chunk_size: number) {
+export function chunkArrayIntoGroupsOfSize<T>(
+  myArray: T[],
+  chunk_size: number
+) {
   var results = [];
 
   while (myArray.length) {

@@ -13,47 +13,46 @@ const envLoadError = (envVar: string) =>
 
 //=====Env consts=====
 export const PORT: number = parseInt(process.env.PORT || "8080");
-if (!PORT) throw new Error(envLoadError("PORT")); //Should never error but for consistancy
+if (!PORT) throw Error(envLoadError("PORT")); //Should never error but for consistancy
 
 export const CERT_DIR: string = env.CERT_DIR || falsyPrimitives.string;
-if (!CERT_DIR) throw new Error(envLoadError("CERT_DIR"));
+if (!CERT_DIR) throw Error(envLoadError("CERT_DIR"));
 
 export const DB_HOST: string = env.DB_HOST || falsyPrimitives.string;
-if (!DB_HOST) throw new Error(envLoadError("DB_HOST"));
+if (!DB_HOST) throw Error(envLoadError("DB_HOST"));
 
 export const DB_PORT_PROD: number = parseInt(env.DB_PORT_PROD || "4000");
-if (!DB_PORT_PROD) throw new Error(envLoadError("DB_PORT_PROD"));
+if (!DB_PORT_PROD) throw Error(envLoadError("DB_PORT_PROD"));
 
 export const DB_PORT_DEV: number = parseInt(env.DB_PORT_DEV || "4001");
-if (!DB_PORT_DEV) throw new Error(envLoadError("DB_PORT_DEV"));
+if (!DB_PORT_DEV) throw Error(envLoadError("DB_PORT_DEV"));
 
 export const DB_USER: string = env.DB_USER || falsyPrimitives.string;
-if (!DB_USER) throw new Error(envLoadError("DB_USER"));
+if (!DB_USER) throw Error(envLoadError("DB_USER"));
 
 export const DB_PASS: string = env.DB_PASS || falsyPrimitives.string;
-if (!DB_PASS) throw new Error(envLoadError("DB_PASS"));
+if (!DB_PASS) throw Error(envLoadError("DB_PASS"));
 
 export const DB_NAME: string = env.DB_NAME || falsyPrimitives.string;
-if (!DB_NAME) throw new Error(envLoadError("DB_NAME"));
+if (!DB_NAME) throw Error(envLoadError("DB_NAME"));
 
 export const EDUSENSE_WORKING_DIR: string =
   env.EDUSENSE_WORKING_DIR || falsyPrimitives.string;
-if (!EDUSENSE_WORKING_DIR)
-  throw new Error(envLoadError("EDUSENSE_WORKING_DIR"));
+if (!EDUSENSE_WORKING_DIR) throw Error(envLoadError("EDUSENSE_WORKING_DIR"));
 
 export const ADMIN_LIST_PROJECT_FILE_PATH: string =
   env.ADMIN_LIST_PROJECT_FILE_PATH || falsyPrimitives.string;
 if (!ADMIN_LIST_PROJECT_FILE_PATH)
-  throw new Error(envLoadError("ADMIN_LIST_PROJECT_FILE_PATH"));
+  throw Error(envLoadError("ADMIN_LIST_PROJECT_FILE_PATH"));
 
 export const ADMIN_LIST = fs
   .readFileSync(path.join(__dirname, "../", ADMIN_LIST_PROJECT_FILE_PATH))
   .toString()
   .split("\n");
-if (!ADMIN_LIST) throw new Error(envLoadError("ADMIN_LIST"));
+if (!ADMIN_LIST) throw Error(envLoadError("ADMIN_LIST"));
 
 export const TOKEN_SECRET: string = env.TOKEN_SECRET || falsyPrimitives.string;
-if (!TOKEN_SECRET) throw new Error(envLoadError("TOKEN_SECRET"));
+if (!TOKEN_SECRET) throw Error(envLoadError("TOKEN_SECRET"));
 
 //=====Firebase=====
 //==================
@@ -103,4 +102,4 @@ if (!FIREBASE_MEASUREMENT_ID) {
 export const GOOGLE_APPLICATION_CREDENTIALS: string =
   env.GOOGLE_APPLICATION_CREDENTIALS || falsyPrimitives.string;
 if (!GOOGLE_APPLICATION_CREDENTIALS)
-  throw new Error(envLoadError("GOOGLE_APPLICATION_CREDENTIALS"));
+  envLoadError("GOOGLE_APPLICATION_CREDENTIALS");

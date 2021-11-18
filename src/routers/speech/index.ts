@@ -117,7 +117,6 @@ const getSpeechTotalsInSessionEndpoint = `/totals/seconds/:sessionId`;
 router.get(getSpeechTotalsInSessionEndpoint, async (req, res) => {
   const { sessionId } = req.params;
   const minSpeakingAmp = req.query.minSpeakingAmp as string;
-
   let response;
   try {
     if (minSpeakingAmp) {
@@ -129,6 +128,8 @@ router.get(getSpeechTotalsInSessionEndpoint, async (req, res) => {
       response = await getSpeechTotalsInSecondsInSession(sessionId);
     }
   } catch (error) {
+    console.error(error);
+
     response = new Response(
       false,
       null,

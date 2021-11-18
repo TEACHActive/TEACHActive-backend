@@ -4,10 +4,15 @@ import { Response } from "../types";
 import {
   createReflectionSectionsForSession,
   deleteReflectionSectionsForSession,
+  getAllReflectionSections,
   getReflectionSectionsForSession,
   updateReflectionSectionsForSession,
 } from "./controller";
-import { authenticateToken, checkIfUserOwnsSession } from "../middleware";
+import {
+  authenticateToken,
+  checkIfUserOwnsSession,
+  checkIsUserAdmin,
+} from "../middleware";
 import { TokenSign } from "../user/types";
 
 const router = express.Router();
@@ -21,10 +26,41 @@ const getReflectionsForSessionEndpoint = `/:sessionId`;
 router.get(getReflectionsForSessionEndpoint, async (req, res) => {
   const { sessionId } = req.params;
   let response;
-  const tokenSign: TokenSign = req.user;
 
   try {
-    response = await getReflectionSectionsForSession(sessionId, tokenSign);
+    const _req: any = req;
+    const tokenSign: TokenSign = _req.user;
+    response = await getReflectionSectionsForSession(sessionId);
+  } catch (error) {
+    console.error(error);
+    response = new Response(
+      false,
+      null,
+      500,
+      "Server error when getting reflection sections"
+    );
+  }
+
+  res.statusCode = response.statusCode;
+  res.json(response);
+});
+
+/**
+ * Get Reflections for session and create them if not existing
+ */
+const getReflectionForSessionUpsertEndpoint = `/upsert/:sessionId`;
+router.post(getReflectionForSessionUpsertEndpoint, async (req, res) => {
+  const { sessionId } = req.params;
+  let response;
+
+  try {
+    const _req: any = req;
+    const tokenSign: TokenSign = _req.user;
+    response = await getReflectionSectionsForSession(sessionId);
+
+    if (response.statusCode === 404) {
+      response = await createReflectionSectionsForSession(sessionId, tokenSign);
+    }
   } catch (error) {
     console.error(error);
     response = new Response(
@@ -46,9 +82,10 @@ const createReflectionsForSessionEndpoint = `/:sessionId`;
 router.post(createReflectionsForSessionEndpoint, async (req, res) => {
   const { sessionId } = req.params;
   let response;
-  const tokenSign: TokenSign = req.user;
 
   try {
+    const _req: any = req;
+    const tokenSign: TokenSign = _req.user;
     response = await createReflectionSectionsForSession(sessionId, tokenSign);
   } catch (error) {
     console.error(error);
@@ -71,9 +108,10 @@ const updateReflectionsForSessionEndpoint = `/:sessionId`;
 router.put(updateReflectionsForSessionEndpoint, async (req, res) => {
   const { sessionId } = req.params;
   let response;
-  const tokenSign: TokenSign = req.user;
 
   try {
+    const _req: any = req;
+    const tokenSign: TokenSign = _req.user;
     response = await updateReflectionSectionsForSession(
       sessionId,
       tokenSign,
@@ -101,9 +139,10 @@ const deleteReflectionsForSessionEndpoint = `/:sessionId`;
 router.delete(deleteReflectionsForSessionEndpoint, async (req, res) => {
   const { sessionId } = req.params;
   let response;
-  const tokenSign: TokenSign = req.user;
 
   try {
+    const _req: any = req;
+    const tokenSign: TokenSign = _req.user;
     response = await deleteReflectionSectionsForSession(sessionId, tokenSign);
   } catch (error) {
     console.error(error);
@@ -118,6 +157,38 @@ router.delete(deleteReflectionsForSessionEndpoint, async (req, res) => {
   res.statusCode = response.statusCode;
   res.json(response);
 });
+
+/**
+ * Get Reflections for session
+ */
+const getAllCreatedReflectionsEndpoint = `/admin/all`;
+router.get(
+  getAllCreatedReflectionsEndpoint,
+  checkIsUserAdmin,
+  async (req, res) => {
+    let response;
+
+    try {
+      response = await getAllReflectionSections();
+
+      if (response.data)
+        response.data = response.data.map(
+          (reflection: any) => reflection.sessionId
+        );
+    } catch (error) {
+      console.error(error);
+      response = new Response(
+        false,
+        null,
+        500,
+        "Server error when getting reflections"
+      );
+    }
+
+    res.statusCode = response.statusCode;
+    res.json(response);
+  }
+);
 
 const baseEndpoint = "/reflections";
 export { router, baseEndpoint };

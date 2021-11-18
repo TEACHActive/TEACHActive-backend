@@ -37,10 +37,21 @@ router.get(getPerformanceForSessionEndpoint, async (req, res) => {
 /**
  * Set Performance metric for session
  */
-const setPerformanceForSessionEndpoint = `/:sessionId/:performance`;
+const setPerformanceForSessionEndpoint = `/:sessionId`;
 router.put(setPerformanceForSessionEndpoint, async (req, res) => {
-  const { sessionId, performance } = req.params;
+  const { sessionId } = req.params;
+  const { performance } = req.body;
+
   let response;
+
+  if (!performance) {
+    response = new Response(
+      false,
+      null,
+      400,
+      "Must pass performance in body, performance not updated"
+    );
+  }
 
   try {
     response = await setSessionPerformanceForSession(sessionId, performance);

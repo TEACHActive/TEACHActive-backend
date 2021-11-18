@@ -2,7 +2,7 @@ import { DateTime, Duration, DurationUnit } from "luxon";
 import { getAudioFramesBySessionId } from "../engine";
 import { AudioFrame, Channel, Speaker } from "../sessions/types";
 import { Response } from "../types";
-import { chunkArray } from "../util";
+import { chunkArrayIntoNumberOfGroups } from "../util";
 import {
   SpeakerDataInSecondsFromFrames,
   SpeechCombinedDataFrame,
@@ -14,7 +14,7 @@ import {
 export const getSpeechDataSession = async (
   sessionId: string,
   channel: Channel,
-  numSegments: number = 100,
+  numSegments: number = 10,
   durationUnit: DurationUnit = "minutes"
 ): Promise<Response<SpeechFrame[] | null>> => {
   const audioFrames = await getAudioFramesBySessionId(sessionId, channel);
@@ -54,7 +54,10 @@ export const getSpeechDataSession = async (
     timeDiff: Duration.fromMillis(0).toObject(),
   };
 
-  const chunkedSpeechFrames = chunkArray(audioFramesWithTimeDiff, numSegments);
+  const chunkedSpeechFrames = chunkArrayIntoNumberOfGroups(
+    audioFramesWithTimeDiff,
+    numSegments
+  );
 
   const speechData = chunkedSpeechFrames.map((frameWindow) =>
     frameWindow.reduce((acc, frame, _, { length }) => {
@@ -84,7 +87,7 @@ export const getSpeechDataSession = async (
 
 export const getSpeechDataCombinedInSession = async (
   sessionId: string,
-  numSegments: number = 100,
+  numSegments: number = 10,
   minSpeakingAmp: number = 0.005
 ): Promise<Response<SpeechDataCombined[] | null>> => {
   const speechDataCombined = await calculateSpeechDataCombinedInSession(
@@ -109,7 +112,10 @@ export const getSpeechDataCombinedInSession = async (
     timeDiff: Duration.fromMillis(0).toObject(),
   };
 
-  const chunkedSpeechFrames = chunkArray(speechDataCombined, numSegments);
+  const chunkedSpeechFrames = chunkArrayIntoNumberOfGroups(
+    speechDataCombined,
+    numSegments
+  );
 
   const speechFramesData = chunkedSpeechFrames.map((frameWindow) => {
     const speechStats = frameWindow.reduce((acc, frame, _, { length }) => {
@@ -161,11 +167,17 @@ export const getSpeechTotalsInSecondsInSession = async (
 const countSpeechTotalsForFrames = (frames: SpeechCombinedDataFrame[]) => {
   const speechTotalsMap = new Map<Speaker, number>();
 
+  frames.sort((a, b) => a.frameNumber - b.frameNumber);
+
+  let previousFrameNumber = 0;
+
   frames.forEach((frame) => {
     speechTotalsMap.set(
       frame.speaker,
-      (speechTotalsMap.get(frame.speaker) || 0) + 1
+      (speechTotalsMap.get(frame.speaker) || 0) +
+        (frame.frameNumber - previousFrameNumber)
     );
+    previousFrameNumber = frame.frameNumber;
   });
 
   return Object.fromEntries(speechTotalsMap);
@@ -175,7 +187,9 @@ const calculateSpeechDataCombinedInSession = async (
   sessionId: string,
   minSpeakingAmp: number = 0.005
 ): Promise<SpeechCombinedDataFrame[]> => {
-  let studentAudioFrames, instructorAudioFrames, response;
+  let studentAudioFrames, instructorAudioFrames;
+
+  //Get both sets of audio frames
   instructorAudioFrames = await getAudioFramesBySessionId(
     sessionId,
     Channel.Instructor
@@ -185,14 +199,18 @@ const calculateSpeechDataCombinedInSession = async (
     Channel.Student
   );
 
+  // This condidtion will need to be modified
   if (
     instructorAudioFrames &&
     instructorAudioFrames.length > 0 &&
     studentAudioFrames &&
     studentAudioFrames.length > 0
   ) {
+    //Grab the inital timestamps for both frame sets
     const instructorInitialDateTime = instructorAudioFrames[0].timestamp;
     const studentInitialDateTime = studentAudioFrames[0].timestamp;
+
+    //Calculate time diffs for instructor frames
     instructorAudioFrames = instructorAudioFrames.map((frame: AudioFrame) => {
       let timeDiff = frame.timestamp
         .diff(instructorInitialDateTime, "seconds")
@@ -205,6 +223,7 @@ const calculateSpeechDataCombinedInSession = async (
       };
     });
 
+    //Calculate time diffs for student frames
     studentAudioFrames = studentAudioFrames.map((frame: AudioFrame) => {
       let timeDiff = frame.timestamp
         .diff(studentInitialDateTime, "seconds")
@@ -217,6 +236,7 @@ const calculateSpeechDataCombinedInSession = async (
       };
     });
 
+    //Loop through min num of frames between each
     let speakerData = [];
     for (
       let i = 0;
@@ -230,6 +250,7 @@ const calculateSpeechDataCombinedInSession = async (
         .toObject();
       timeDiff["seconds"] = Math.round(timeDiff["seconds"] || 0);
 
+      //Find speaker (who is speaking loudest or if no one can be considered speaking)
       let speaker;
       if (insAmp < minSpeakingAmp && stuAmp < minSpeakingAmp) {
         speaker = Speaker.Ambient;
@@ -237,6 +258,7 @@ const calculateSpeechDataCombinedInSession = async (
         speaker = insAmp > stuAmp ? Speaker.Instructor : Speaker.Student;
       }
 
+      //Add frame speaker to array
       speakerData.push({
         frameNumber: instructorAudioFrames[i].frameNumber,
         speaker: speaker,

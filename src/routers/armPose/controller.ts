@@ -1,5 +1,5 @@
 import { Response } from "../types";
-import { chunkArray } from "../util";
+import { chunkArrayIntoNumberOfGroups } from "../util";
 import { ArmPoseData, ArmPoseStats } from "./types";
 import { getCameraFPS, getVideoFramesBySessionId } from "../engine";
 import { ArmPose, Channel, Person, VideoFrame } from "../sessions/types";
@@ -38,7 +38,7 @@ export const getArmPoseTotalsInSecondsInSession = async (
 
 export const getArmPoseDataInSession = async (
   sessionId: string,
-  numSegments: number = 100
+  numSegments: number = 10
 ): Promise<Response<ArmPoseStats[] | null>> => {
   const videoFrames = await getVideoFramesBySessionId(
     sessionId,
@@ -50,7 +50,7 @@ export const getArmPoseDataInSession = async (
     max: Number.MIN_SAFE_INTEGER,
     min: Number.MAX_SAFE_INTEGER,
   };
-  const chunkedArmPoses = chunkArray(
+  const chunkedArmPoses = chunkArrayIntoNumberOfGroups(
     countArmPosesForFrames(videoFrames),
     numSegments
   );

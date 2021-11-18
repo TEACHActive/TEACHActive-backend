@@ -81,6 +81,26 @@ export class Session {
   }
 }
 
+// export interface VideoFrame {
+//   frameNumber: number;
+//   people: Person[];
+//   timestamp: DateTime;
+// }
+
+// export const createVideoFrame = (data: any, initialDateTime: DateTime, fps: number) => {
+//   return {
+//     frameNumber: data.frameNumber,
+//     people: data.people.map((person: any) => {
+//       return {
+//         openposeId: number;
+//         trackingId: number;
+//         armpose: ArmPose;
+//         body: Body;
+//         sitStand: SitStand;
+//       }
+//     })
+//   }
+// }
 export class VideoFrame {
   frameNumber: number;
   people: Person[];
@@ -109,6 +129,7 @@ export class AudioFrame {
 
   constructor(data: any, initialDateTime: DateTime, fps: number) {
     this.frameNumber = data.frameNumber;
+
     this.amplitude = data.audio.amplitude;
     this.timestamp = initialDateTime.plus(
       Duration.fromObject({ seconds: this.frameNumber / fps })

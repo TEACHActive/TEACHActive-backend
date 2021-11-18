@@ -5,13 +5,13 @@ import {
   InstructorMovementFrameResponse,
 } from "./types";
 import { Response } from "../types";
-import { chunkArray } from "../util";
+import { chunkArrayIntoNumberOfGroups } from "../util";
 import { getVideoFramesBySessionId } from "../engine";
 import { BodyPart, Channel, VideoFrame } from "../sessions/types";
 
 export const getInstructorMovementDataInSession = async (
   sessionId: string,
-  numSegments: number = 100,
+  numSegments: number = 10,
   durationUnit: DurationUnit = "minutes"
 ): Promise<Response<InstructorMovementFrameResponse[] | null>> => {
   const videoFrames = await getVideoFramesBySessionId(
@@ -46,7 +46,7 @@ export const getInstructorMovementDataInSession = async (
     });
   });
 
-  const chunkedInstructorMovementFrames = chunkArray(
+  const chunkedInstructorMovementFrames = chunkArrayIntoNumberOfGroups(
     instructorInFrames,
     numSegments
   );

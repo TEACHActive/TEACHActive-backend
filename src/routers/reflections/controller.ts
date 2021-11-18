@@ -6,18 +6,17 @@ import {
   ReflectionQuestion,
   ReflectionSection,
 } from "../../models/reflectionsModel";
+import { Reflection } from "./types";
 
 export const getReflectionSectionsForSession = async (
-  sessionId: string,
-  tokenSign: TokenSign
+  sessionId: string
 ): Promise<Response<any | null>> => {
   const matchingReflection = await Better_ReflectionsModel.findOne({
-    userId: tokenSign.uid,
     sessionId: sessionId,
   });
 
   if (!matchingReflection) {
-    const errorMsg = `Matching reflection section not found for user`;
+    const errorMsg = `Matching reflection section not found`;
     console.error(errorMsg);
     return new Response(false, null, 404, errorMsg);
   }
@@ -109,4 +108,22 @@ export const deleteReflectionSectionsForSession = async (
   }
 
   return new Response(true, matchingReflection);
+};
+
+export const getAllReflectionSections = async (): Promise<
+  Response<Reflection[] | null>
+> => {
+  const reflections = await Better_ReflectionsModel.find();
+
+  if (!reflections) {
+    const errorMsg = `No reflections found`;
+    console.error(errorMsg);
+    return new Response(false, null, 404, errorMsg);
+  }
+
+  const constructedReflections = reflections.map(
+    (reflection: any) => new Reflection(reflection)
+  );
+
+  return new Response(true, constructedReflections);
 };

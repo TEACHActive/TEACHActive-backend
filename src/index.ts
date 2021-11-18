@@ -61,6 +61,13 @@ const CreateServer = async (mongoose: mongoose.Mongoose) => {
       console.log("Server starting on port: " + Const.PORT); // eslint-disable-line
     });
   }
+
+  // const used: any = process.memoryUsage();
+  // for (let key in used) {
+  //   console.log(
+  //     `${key} ${Math.round((used[key] / 1024 / 1024) * 100) / 100} MB`
+  //   );
+  // }
 };
 
 const mongooseConnectionOptions = {

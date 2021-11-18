@@ -198,19 +198,20 @@ export const baseReflectionSections: ReflectionSection[] = [
     ],
   },
   {
-    name: "sitVSStand",
-    title: "Sit vs Stand",
-    questions: [],
-  },
-  {
     name: "instructorMovement",
     title: "Instructor Movement",
-    questions: [],
-  },
-  {
-    name: "behavioralEngagement",
-    title: "Behavioral Engagement",
-    questions: [],
+    questions: [
+      constructQuestion({
+        questionType: "ynQuestion",
+        prompt: "Are you satisfied with where you move in the class?",
+        ynQuestion: YNQuestion(),
+      }),
+      constructQuestion({
+        questionType: "ynQuestion",
+        prompt: "Would you like to set a goal for next session?",
+        ynQuestion: YNQuestion(),
+      }),
+    ],
   },
   {
     name: "instructorSpeech",
