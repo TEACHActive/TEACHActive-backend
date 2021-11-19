@@ -22,6 +22,10 @@ import {
   router as attendance,
   baseEndpoint as attendanceEndpoint,
 } from "./attendance";
+import {
+  router as sitStand,
+  baseEndpoint as sitStandEndpoint,
+} from "./sitStand";
 
 export const appRouters = [
   {
@@ -59,5 +63,9 @@ export const appRouters = [
   {
     router: attendance,
     endpoint: attendanceEndpoint,
+  },
+  {
+    router: sitStand,
+    endpoint: sitStandEndpoint,
   },
 ];

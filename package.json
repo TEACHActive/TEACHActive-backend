@@ -10,7 +10,7 @@
     "start:dev": "ts-node-dev --respawn --transpile-only src/index.ts",
     "build": "tsc",
     "start": "node build/index.js",
-    "kill": "kill -9 $(lsof -t -i:4001)",
+    "kill": "kill -9 $(lsof -t -i:4011)",
     "docker-build": "docker-compose build",
     "docker-up": "docker-compose up",
     "docker-down": "docker-compose down"

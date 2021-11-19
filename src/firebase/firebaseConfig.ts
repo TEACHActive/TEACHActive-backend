@@ -12,7 +12,7 @@ import {
 } from "../variables";
 import { GOOGLE_APPLICATION_CREDENTIALS } from "../variables";
 
-var serviceAccount = require(`${GOOGLE_APPLICATION_CREDENTIALS}`);
+var serviceAccount = require(`../../${GOOGLE_APPLICATION_CREDENTIALS}`);
 
 const firebaseClientConfig: FirebaseOptions = {
   apiKey: FIREBASE_API_KEY,

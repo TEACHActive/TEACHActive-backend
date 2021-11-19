@@ -12,8 +12,8 @@ COPY .env .env
 
 RUN npm run build
 
-ENV PORT=4000
+ENV PORT=4010
 
-EXPOSE 4000
+EXPOSE 4010
 
 CMD [ "npm", "start" ]

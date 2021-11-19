@@ -36,7 +36,7 @@ export const getAxiosConfig = (
 export function chunkArrayIntoNumberOfGroups<T>(
   myArray: T[],
   chunk_size?: number
-) {
+): T[][] {
   if (!chunk_size) chunk_size = myArray.length;
   const numItems = myArray.length / chunk_size;
   var results = [];

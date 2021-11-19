@@ -48,6 +48,8 @@ router.get(getArmPoseDataInSessionEndpoint, async (req, res) => {
   try {
     response = await getArmPoseDataInSession(sessionId, parseInt(numSegments));
   } catch (error) {
+    console.log(error);
+
     response = new Response(
       false,
       null,

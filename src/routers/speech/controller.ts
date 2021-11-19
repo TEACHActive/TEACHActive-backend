@@ -92,7 +92,8 @@ export const getSpeechDataCombinedInSession = async (
 ): Promise<Response<SpeechDataCombined[] | null>> => {
   const speechDataCombined = await calculateSpeechDataCombinedInSession(
     sessionId,
-    minSpeakingAmp
+    minSpeakingAmp,
+    "minutes"
   );
 
   const currDate = DateTime.fromJSDate(new Date());
@@ -154,7 +155,8 @@ export const getSpeechTotalsInSecondsInSession = async (
 ): Promise<Response<SpeechTotalsInSecondsFromFrames | null>> => {
   const speechDataCombined = await calculateSpeechDataCombinedInSession(
     sessionId,
-    minSpeakingAmp
+    minSpeakingAmp,
+    "seconds"
   );
 
   const speechTotals = new SpeechTotalsInSecondsFromFrames(
@@ -185,7 +187,8 @@ const countSpeechTotalsForFrames = (frames: SpeechCombinedDataFrame[]) => {
 
 const calculateSpeechDataCombinedInSession = async (
   sessionId: string,
-  minSpeakingAmp: number = 0.005
+  minSpeakingAmp: number = 0.005,
+  unit: "minutes" | "seconds"
 ): Promise<SpeechCombinedDataFrame[]> => {
   let studentAudioFrames, instructorAudioFrames;
 
@@ -213,9 +216,9 @@ const calculateSpeechDataCombinedInSession = async (
     //Calculate time diffs for instructor frames
     instructorAudioFrames = instructorAudioFrames.map((frame: AudioFrame) => {
       let timeDiff = frame.timestamp
-        .diff(instructorInitialDateTime, "seconds")
+        .diff(instructorInitialDateTime, unit)
         .toObject();
-      timeDiff["seconds"] = Math.round(timeDiff["seconds"] || 0);
+      timeDiff[unit] = Math.round(timeDiff[unit] || 0);
 
       return {
         ...frame,
@@ -226,9 +229,9 @@ const calculateSpeechDataCombinedInSession = async (
     //Calculate time diffs for student frames
     studentAudioFrames = studentAudioFrames.map((frame: AudioFrame) => {
       let timeDiff = frame.timestamp
-        .diff(studentInitialDateTime, "seconds")
+        .diff(studentInitialDateTime, unit)
         .toObject();
-      timeDiff["seconds"] = Math.round(timeDiff["seconds"] || 0);
+      timeDiff[unit] = Math.round(timeDiff[unit] || 0);
 
       return {
         ...frame,
@@ -246,9 +249,9 @@ const calculateSpeechDataCombinedInSession = async (
       const insAmp = instructorAudioFrames[i].amplitude;
       const stuAmp = studentAudioFrames[i].amplitude;
       let timeDiff = instructorAudioFrames[i].timestamp
-        .diff(instructorInitialDateTime, "seconds")
+        .diff(instructorInitialDateTime, unit)
         .toObject();
-      timeDiff["seconds"] = Math.round(timeDiff["seconds"] || 0);
+      timeDiff[unit] = Math.round(timeDiff[unit] || 0);
 
       //Find speaker (who is speaking loudest or if no one can be considered speaking)
       let speaker;
