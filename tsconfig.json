@@ -12,7 +12,6 @@
     "resolveJsonModule": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "typeRoots": ["@types"],
     "sourceMap": true
   }
 }

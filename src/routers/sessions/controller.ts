@@ -1,11 +1,17 @@
-import { AudioFrame, Channel, Session, VideoFrame } from "./types";
 import { Response } from "../types";
 import { SessionModel } from "../../models/sessionModel";
 import {
+  AudioFrame,
+  VideoChannel,
+  Session,
+  VideoFrame,
+  AudioChannel,
+} from "./types";
+import {
   getCameraFPS,
+  isAdminRequest,
   getVideoFramesBySessionId,
   getAudioFramesBySessionId,
-  isAdminRequest,
 } from "../engine";
 import { TokenSign } from "../user/types";
 
@@ -61,25 +67,18 @@ export const updateSessionNameBySessionId = async (
 
 export const getVideoFramesInSession = async (
   sessionId: string,
-  channel: Channel | null,
-  tokenSign: TokenSign
+  channel: VideoChannel | null,
+  userSessions?: Session[]
 ): Promise<Response<VideoFrame[] | null>> => {
   if (!channel) {
     return new Response(false, null, 400, "Invalid channel name");
   }
 
-  const userSessions = await getSessions(
-    tokenSign.uid,
-    isAdminRequest(tokenSign)
-  );
-
-  if (!userSessions.data) {
+  if (!userSessions) {
     return new Response(false, null, 403, "User has no sessions");
   }
 
-  const userSession = userSessions.data.find(
-    (session) => session.id === sessionId
-  );
+  const userSession = userSessions.find((session) => session.id === sessionId);
   if (!userSession) {
     return new Response(
       false,
@@ -94,25 +93,18 @@ export const getVideoFramesInSession = async (
 
 export const getAudioFramesInSession = async (
   sessionId: string,
-  channel: Channel | null,
-  tokenSign: TokenSign
+  channel: AudioChannel | null,
+  userSessions?: Session[]
 ): Promise<Response<AudioFrame[] | null>> => {
   if (!channel) {
     return new Response(false, null, 400, "Invalid channel name");
   }
 
-  const userSessions = await getSessions(
-    tokenSign.uid,
-    isAdminRequest(tokenSign)
-  );
-
-  if (!userSessions.data) {
+  if (!userSessions) {
     return new Response(false, null, 403, "User has no sessions");
   }
 
-  const userSession = userSessions.data.find(
-    (session) => session.id === sessionId
-  );
+  const userSession = userSessions.find((session) => session.id === sessionId);
   if (!userSession) {
     return new Response(
       false,

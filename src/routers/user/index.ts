@@ -1,12 +1,13 @@
 import express from "express";
 
 import { Response } from "../types";
-import { getUser } from "./controller";
-import { authenticateToken } from "../middleware";
 import { TokenSign } from "./types";
+import { getUser } from "./controller";
+import { authenticateToken, ensureUserIsAdmin } from "../middleware";
 
 const router = express.Router();
 router.use(authenticateToken);
+router.use(ensureUserIsAdmin);
 
 /**
  * Get User by UID
@@ -19,12 +20,7 @@ router.get(getUserEndpoint, async (req, res) => {
     const tokenSign: TokenSign = _req.user;
     response = await getUser(tokenSign);
   } catch (error) {
-    response = new Response(
-      false,
-      null,
-      500,
-      "Server error when getting instructor movement"
-    );
+    response = new Response(false, null, 500, "Server error when user");
   }
 
   res.statusCode = response.statusCode;

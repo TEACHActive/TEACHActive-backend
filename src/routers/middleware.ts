@@ -1,11 +1,12 @@
 import jwt from "jsonwebtoken";
+import { body, param, query } from "express-validator";
+import { validationResult } from "express-validator";
 import { NextFunction, Response as ExpressResponse } from "express";
 
 import { Response } from "./types";
 import { TokenSign } from "./user/types";
-import * as Constants from "../variables";
-import { userOwnsSession } from "./engine";
 import { TOKEN_SECRET } from "../variables";
+import { isAdminRequest, userOwnsSession } from "./engine";
 
 export const authenticateToken = (
   req: any,
@@ -27,7 +28,7 @@ export const authenticateToken = (
   });
 };
 
-export const checkIfUserOwnsSession = async (
+export const ensureUserOwnsSession = async (
   req: any,
   res: ExpressResponse,
   next: NextFunction
@@ -51,17 +52,16 @@ export const checkIfUserOwnsSession = async (
   next();
 };
 
-export const checkIsUserAdmin = async (
+export const ensureUserIsAdmin = async (
   req: any,
   res: ExpressResponse,
   next: NextFunction
 ) => {
-  const { sessionId } = req.params;
   const tokenSign: TokenSign = req.user;
 
-  const isAdminRequest = Constants.ADMIN_LIST.includes(tokenSign.uid);
+  const adminRequest = await isAdminRequest(tokenSign);
 
-  if (!isAdminRequest) {
+  if (!adminRequest) {
     const response = new Response(false, null, 401, "User is not admin");
     res.statusCode = response.statusCode;
     res.json(response);
@@ -69,3 +69,83 @@ export const checkIsUserAdmin = async (
   }
   next();
 };
+
+export const ensureQueryContains = async (
+  req: any,
+  res: ExpressResponse,
+  next: NextFunction,
+  queryParams: string[]
+) => {
+  const query = req.query;
+  let missingQueryParams: string[] = [];
+  queryParams.forEach((queryParam) => {
+    const queryParamExists = typeof query[queryParam] === "string";
+    if (!queryParamExists) {
+      missingQueryParams.push(queryParam as string);
+    }
+  });
+
+  if (missingQueryParams.length > 0) {
+    const response = new Response(
+      false,
+      null,
+      400,
+      "Missing query params: " + missingQueryParams.join(",")
+    );
+    res.statusCode = response.statusCode;
+    res.json(response);
+    return;
+  }
+  next();
+};
+
+export const ensureQueryContainsConstructor = (queryParams: string[]) => {
+  return (req: any, res: ExpressResponse, next: NextFunction) =>
+    ensureQueryContains(req, res, next, queryParams);
+};
+
+export const ensureValidInput = (
+  req: any,
+  res: ExpressResponse,
+  next: NextFunction
+) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+  next();
+};
+
+export const sessionIdParamValidator = param("sessionId")
+  .not()
+  .isEmpty()
+  .trim()
+  .escape();
+export const sessionChannelParamValidator = param("channel")
+  .not()
+  .isEmpty()
+  .trim()
+  .escape();
+export const numSegmentsQueryValidator = query("numSegments")
+  .not()
+  .isEmpty()
+  .isNumeric()
+  .trim()
+  .escape();
+export const minSpeakingAmpQueryValidator = query("minSpeakingAmp")
+  .not()
+  .isEmpty()
+  .isFloat()
+  .trim()
+  .escape();
+export const sessionNameBodyValidator = body("name")
+  .not()
+  .isEmpty()
+  .trim()
+  .escape();
+export const performanceBodyValidator = body("performance")
+  .not()
+  .isEmpty()
+  .isNumeric()
+  .trim()
+  .escape();

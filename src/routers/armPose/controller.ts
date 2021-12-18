@@ -1,18 +1,12 @@
 import { Response } from "../types";
+import { ArmPoseData } from "./types";
+import { getCameraFPS } from "../engine";
 import { chunkArrayIntoNumberOfGroups } from "../util";
-import { ArmPoseData, ArmPoseStats } from "./types";
-import { getCameraFPS, getVideoFramesBySessionId } from "../engine";
-import { ArmPose, Channel, Person, VideoFrame } from "../sessions/types";
-import { DateTime } from "luxon";
+import { ArmPose, Person, VideoFrame } from "../sessions/types";
 
 export const getArmPoseTotalsInSecondsInSession = async (
-  sessionId: string
+  videoFrames: VideoFrame[]
 ): Promise<Response<ArmPoseData | null>> => {
-  const videoFrames = await getVideoFramesBySessionId(
-    sessionId,
-    Channel.Student
-  );
-
   const armPoseMap = countArmPosesFromFrames(videoFrames).reduce(
     (map: Map<string, number>, frameCountMap) => {
       Object.keys(frameCountMap.countMap).map((key) => {
@@ -38,19 +32,14 @@ export const getArmPoseTotalsInSecondsInSession = async (
 };
 
 export const getArmPoseDataInSession = async (
-  sessionId: string,
+  videoFrames: VideoFrame[],
   numSegments: number = 10
 ): Promise<Response<any[] | null>> => {
-  const videoFrames = await getVideoFramesBySessionId(
-    sessionId,
-    Channel.Student
-  );
-
-  const defaultArmPoseStats = {
-    avg: 0,
-    max: Number.MIN_SAFE_INTEGER,
-    min: Number.MAX_SAFE_INTEGER,
-  };
+  // const defaultArmPoseStats = {
+  //   avg: 0,
+  //   max: Number.MIN_SAFE_INTEGER,
+  //   min: Number.MAX_SAFE_INTEGER,
+  // };
 
   const chunkedVideoFrames = chunkArrayIntoNumberOfGroups(
     videoFrames,
@@ -110,55 +99,7 @@ export const getArmPoseDataInSession = async (
   return new Response(true, data);
 };
 
-// export const getArmPoseDataInSession = async (
-//   sessionId: string,
-//   numSegments: number = 10
-// ): Promise<Response<ArmPoseStats[] | null>> => {
-//   const videoFrames = await getVideoFramesBySessionId(
-//     sessionId,
-//     Channel.Student
-//   );
-
-//   const defaultArmPoseStats = {
-//     avg: 0,
-//     max: Number.MIN_SAFE_INTEGER,
-//     min: Number.MAX_SAFE_INTEGER,
-//   };
-//   const chunkedArmPoses = chunkArrayIntoNumberOfGroups(
-//     countArmPosesFromFrames(videoFrames),
-//     numSegments
-//   );
-
-//   const armPoseDataStats = chunkedArmPoses.map((armPoseArrayDataWindow, i) => {
-//     const stats = armPoseArrayDataWindow.reduce(
-//       (map: Map<string, ArmPoseStats>, armPoseData, _, { length }) => {
-//         Object.keys(armPoseData.countMap).forEach((armPoseKey) => {
-//           let statsForArmPose =
-//             { ...map.get(armPoseKey) } || defaultArmPoseStats;
-//           statsForArmPose.max = Math.max(
-//             armPoseData.countMap[armPoseKey],
-//             statsForArmPose.max || defaultArmPoseStats.max
-//           );
-//           statsForArmPose.min = Math.min(
-//             armPoseData.countMap[armPoseKey],
-//             statsForArmPose.min || defaultArmPoseStats.min
-//           );
-//           statsForArmPose.avg =
-//             (statsForArmPose.avg || defaultArmPoseStats.avg) +
-//             armPoseData.countMap[armPoseKey] / length;
-//           map.set(armPoseKey, statsForArmPose);
-//         });
-//         return map;
-//       },
-//       new Map()
-//     );
-//     return Object.fromEntries(stats);
-//   });
-
-//   return new Response(true, armPoseDataStats);
-// };
-
-const countArmPosesFromFrames = (frames: VideoFrame[]) =>
+export const countArmPosesFromFrames = (frames: VideoFrame[]) =>
   frames.map((frame) => {
     const countMap = frame.people.reduce(
       (frameCountMap: Map<ArmPose, number>, person: Person) => {
@@ -173,7 +114,7 @@ const countArmPosesFromFrames = (frames: VideoFrame[]) =>
     return { countMap: Object.fromEntries(countMap), ...frame };
   });
 
-const countArmPosesInFrame = (frame: VideoFrame) => {
+export const countArmPosesInFrame = (frame: VideoFrame) => {
   const countMap = frame.people.reduce(
     (frameCountMap: Map<ArmPose, number>, person: Person) => {
       frameCountMap.set(

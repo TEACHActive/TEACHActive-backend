@@ -1,16 +1,10 @@
 import { Response } from "../types";
 import { AttendanceStats } from "./types";
-import { Channel } from "../sessions/types";
-import { getVideoFramesBySessionId } from "../engine";
+import { VideoFrame } from "../sessions/types";
 
 export const getAttendanceInSession = async (
-  sessionId: string
+  videoFrames: VideoFrame[]
 ): Promise<Response<AttendanceStats | null>> => {
-  const videoFrames = await getVideoFramesBySessionId(
-    sessionId,
-    Channel.Student
-  );
-
   if (videoFrames.length === 0) {
     return new Response(false, null, 404, "No Student video frames");
   }

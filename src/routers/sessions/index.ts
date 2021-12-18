@@ -1,9 +1,12 @@
 import express from "express";
 
 import { Response } from "../types";
-import { ParseChannel } from "../engine";
+import {
+  isAdminRequest,
+  ParseAudioChannel,
+  ParseVideoChannel,
+} from "../engine";
 import { TokenSign } from "../user/types";
-import * as Constants from "../../variables";
 import {
   getSessions,
   getVideoFramesInSession,
@@ -11,9 +14,13 @@ import {
   updateSessionNameBySessionId,
 } from "./controller";
 import {
+  ensureValidInput,
   authenticateToken,
-  checkIfUserOwnsSession,
-  checkIsUserAdmin,
+  ensureUserIsAdmin,
+  ensureUserOwnsSession,
+  sessionIdParamValidator,
+  sessionNameBodyValidator,
+  sessionChannelParamValidator,
 } from "../middleware";
 
 const router = express.Router();
@@ -29,8 +36,8 @@ router.get(getSessionsEndpoint, async (req, res) => {
     const _req: any = req;
     const tokenSign: TokenSign = _req.user;
 
-    const isAdminRequest = Constants.ADMIN_LIST.includes(tokenSign.uid);
-    response = await getSessions(tokenSign.uid, isAdminRequest);
+    const adminRequest = await isAdminRequest(tokenSign);
+    response = await getSessions(tokenSign.uid, adminRequest);
   } catch (error) {
     response = new Response(
       false,
@@ -50,9 +57,12 @@ router.get(getSessionsEndpoint, async (req, res) => {
 const updateSessionNameBySessionIdEndpoint = `/:sessionId`;
 router.put(
   updateSessionNameBySessionIdEndpoint,
-  checkIfUserOwnsSession,
+  sessionIdParamValidator,
+  sessionNameBodyValidator,
+  ensureValidInput,
+  ensureUserOwnsSession,
   async (req, res) => {
-    const { sessionId } = req.params;
+    const { sessionId } = req.params!;
     const { name } = req.body;
 
     let response;
@@ -89,20 +99,26 @@ router.put(
 const getVideoFramesInSessionEndpoint = `/videoFrames/:sessionId/:channel`;
 router.get(
   getVideoFramesInSessionEndpoint,
-  checkIfUserOwnsSession,
-  checkIsUserAdmin,
+  sessionIdParamValidator,
+  sessionChannelParamValidator,
+  ensureValidInput,
+  ensureUserIsAdmin,
   async (req, res) => {
-    const { sessionId, channel } = req.params;
+    const { sessionId, channel } = req.params!;
 
     let response;
     try {
       const _req: any = req;
       const tokenSign: TokenSign = _req.user;
-      const parsedChannel = ParseChannel(channel);
+      const parsedChannel = ParseVideoChannel(channel);
+      const userSessions = await getSessions(
+        tokenSign.uid,
+        await isAdminRequest(tokenSign)
+      );
       response = await getVideoFramesInSession(
         sessionId,
         parsedChannel,
-        tokenSign
+        userSessions.data || undefined
       );
     } catch (error) {
       response = new Response(
@@ -124,20 +140,27 @@ router.get(
 const getAudioFramesInSessionEndpoint = `/audioFrames/:sessionId/:channel`;
 router.get(
   getAudioFramesInSessionEndpoint,
-  checkIfUserOwnsSession,
-  checkIsUserAdmin,
+  sessionIdParamValidator,
+  sessionChannelParamValidator,
+  ensureValidInput,
+  ensureUserIsAdmin,
   async (req, res) => {
-    const { sessionId, channel } = req.params;
+    const { sessionId, channel } = req.params!;
 
     let response;
     try {
       const _req: any = req;
       const tokenSign: TokenSign = _req.user;
-      const parsedChannel = ParseChannel(channel);
+      const parsedChannel = ParseAudioChannel(channel);
+      const userSessions = await getSessions(
+        tokenSign.uid,
+        await isAdminRequest(tokenSign)
+      );
+
       response = await getAudioFramesInSession(
         sessionId,
         parsedChannel,
-        tokenSign
+        userSessions.data || undefined
       );
     } catch (error) {
       response = new Response(

@@ -4,33 +4,54 @@ import { DateTime } from "luxon";
 import { MethodType } from "./types";
 import { getAxiosConfig } from "./util";
 import { TokenSign } from "./user/types";
-import * as Constants from "../variables";
-import { AudioFrame, Channel, VideoFrame } from "./sessions/types";
+import {
+  AudioFrame,
+  VideoFrame,
+  AudioChannel,
+  VideoChannel,
+} from "./sessions/types";
 import { getSessions } from "./sessions/controller";
+import { UserModel } from "../models/userModel";
 
 export const getCameraFPS = (): number => {
   return 15; //Todo: get actual fps
 };
 
-export const ParseChannel = (channel: string): Channel | null => {
-  if (channel !== Channel.Instructor && channel !== Channel.Student) {
+export const ParseVideoChannel = (channel: string): VideoChannel | null => {
+  if (channel !== VideoChannel.Instructor && channel !== VideoChannel.Student) {
+    return null;
+  }
+  return channel;
+};
+export const ParseAudioChannel = (channel: string): AudioChannel | null => {
+  if (channel !== AudioChannel.Instructor && channel !== AudioChannel.Student) {
     return null;
   }
   return channel;
 };
 
-export const isAdminRequest = (tokenSign: TokenSign): boolean => {
-  return Constants.ADMIN_LIST.includes(tokenSign.uid);
+export const isAdminRequest = async (
+  tokenSign: TokenSign
+): Promise<boolean> => {
+  const matchingUser = (
+    await UserModel.findOne({ uid: tokenSign.uid })
+  )?.toObject();
+
+  if (!matchingUser || !matchingUser.isAdmin) {
+    console.log("not admin");
+    return false;
+  }
+  return true;
 };
 
 export const userOwnsSession = async (
   sessionId: string,
   tokenSign: TokenSign
 ): Promise<boolean> => {
-  const isAdminRequest = Constants.ADMIN_LIST.includes(tokenSign.uid);
-  if (isAdminRequest) return true;
+  const adminRequest = await isAdminRequest(tokenSign);
+  if (adminRequest) return true;
 
-  const userSessions = await getSessions(tokenSign.uid, isAdminRequest);
+  const userSessions = await getSessions(tokenSign.uid, adminRequest);
   if (!userSessions.data) {
     return false;
   }
@@ -45,7 +66,7 @@ export const userOwnsSession = async (
 
 export const getVideoFramesBySessionId = async (
   sessionID: string,
-  channel: Channel,
+  channel: VideoChannel,
   serialize: boolean = false
 ): Promise<VideoFrame[]> => {
   const data = JSON.stringify({
@@ -123,7 +144,7 @@ export const getVideoFramesBySessionId = async (
 
 export const getAudioFramesBySessionId = async (
   sessionID: string,
-  channel: Channel,
+  channel: AudioChannel,
   serialize: boolean = false
 ): Promise<AudioFrame[]> => {
   let edusenseResponse = await makeAudioFrameQuery(sessionID, channel);
@@ -132,7 +153,7 @@ export const getAudioFramesBySessionId = async (
     edusenseResponse = await makeAudioFrameQuery(
       sessionID,
       channel,
-      "edusense-audio"
+      "edusense-audio" //Todo: Adjust this???
     );
   }
 
@@ -172,7 +193,7 @@ export const getAudioFramesBySessionId = async (
 
 const makeAudioFrameQuery = async (
   sessionID: string,
-  channel: Channel,
+  channel: AudioChannel,
   schema: string = "0.1.0"
 ) => {
   const data = JSON.stringify({

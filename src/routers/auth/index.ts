@@ -2,6 +2,8 @@ import express from "express";
 
 import { Response } from "../types";
 import { TokenResponse } from "./types";
+import { adminAuth } from "../../firebase";
+import { TOKEN_SECRET } from "../../variables";
 import { generateAccessToken } from "./controller";
 import { loginWithEmailAndPassword } from "../../firebase/authController";
 
@@ -41,7 +43,13 @@ router.post(signInUserEndpoint, async (req, res) => {
       return;
     }
 
-    const tokenResponse = await generateAccessToken(userCredential);
+    const firebaseToken = await adminAuth.createCustomToken(userCredential.uid);
+
+    const tokenResponse = await generateAccessToken(
+      userCredential.uid,
+      firebaseToken,
+      TOKEN_SECRET as string
+    );
 
     if (!tokenResponse) {
       const error = "Failed to generate token";

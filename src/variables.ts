@@ -1,6 +1,3 @@
-import fs from "fs";
-import path from "path";
-
 const { env } = process;
 
 const falsyPrimitives = {
@@ -39,17 +36,6 @@ if (!DB_NAME) throw Error(envLoadError("DB_NAME"));
 export const EDUSENSE_WORKING_DIR: string =
   env.EDUSENSE_WORKING_DIR || falsyPrimitives.string;
 if (!EDUSENSE_WORKING_DIR) throw Error(envLoadError("EDUSENSE_WORKING_DIR"));
-
-export const ADMIN_LIST_PROJECT_FILE_PATH: string =
-  env.ADMIN_LIST_PROJECT_FILE_PATH || falsyPrimitives.string;
-if (!ADMIN_LIST_PROJECT_FILE_PATH)
-  throw Error(envLoadError("ADMIN_LIST_PROJECT_FILE_PATH"));
-
-export const ADMIN_LIST = fs
-  .readFileSync(path.join(__dirname, "../", ADMIN_LIST_PROJECT_FILE_PATH))
-  .toString()
-  .split("\n");
-if (!ADMIN_LIST) throw Error(envLoadError("ADMIN_LIST"));
 
 export const TOKEN_SECRET: string = env.TOKEN_SECRET || falsyPrimitives.string;
 if (!TOKEN_SECRET) throw Error(envLoadError("TOKEN_SECRET"));

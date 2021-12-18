@@ -246,13 +246,19 @@ export enum SitStand {
   Error = "error",
 }
 
-export enum Channel {
+export enum VideoChannel {
   Student = "student",
   Instructor = "instructor",
+}
+
+export enum AudioChannel {
+  Student = "instructor",
+  Instructor = "student",
 }
 
 export enum Speaker {
   Student = "student",
   Instructor = "instructor",
   Ambient = "ambient",
+  Silent = "silent",
 }

@@ -1,18 +1,11 @@
 import { Response } from "../types";
-import { getVideoFramesBySessionId } from "../engine";
-import { SitStandInFrame } from "./types";
-import { Channel, Person, SitStand, VideoFrame } from "../sessions/types";
 import { chunkArrayIntoNumberOfGroups } from "../util";
+import { Person, SitStand, VideoFrame } from "../sessions/types";
 
 export const getSitStandDataInSession = async (
-  sessionId: string,
+  videoFrames: VideoFrame[],
   numSegments: number
-): Promise<Response<SitStandInFrame[] | null>> => {
-  const videoFrames = await getVideoFramesBySessionId(
-    sessionId,
-    Channel.Student
-  );
-
+): Promise<Response<any | null>> => {
   const chunkedVideoFrames = chunkArrayIntoNumberOfGroups(
     videoFrames,
     numSegments

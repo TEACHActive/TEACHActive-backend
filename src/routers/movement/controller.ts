@@ -7,7 +7,7 @@ import {
 import { Response } from "../types";
 import { chunkArrayIntoNumberOfGroups } from "../util";
 import { getVideoFramesBySessionId } from "../engine";
-import { BodyPart, Channel, VideoFrame } from "../sessions/types";
+import { BodyPart, VideoChannel, VideoFrame } from "../sessions/types";
 
 export const getInstructorMovementDataInSession = async (
   sessionId: string,
@@ -16,7 +16,7 @@ export const getInstructorMovementDataInSession = async (
 ): Promise<Response<InstructorMovementFrameResponse[] | null>> => {
   const videoFrames = await getVideoFramesBySessionId(
     sessionId,
-    Channel.Instructor
+    VideoChannel.Instructor
   );
 
   if (videoFrames.length === 0) {

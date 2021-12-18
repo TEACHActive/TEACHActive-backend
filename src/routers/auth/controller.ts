@@ -1,29 +1,38 @@
 import jwt from "jsonwebtoken";
-import { User } from "@firebase/auth";
-import { getAuth } from "firebase-admin/auth";
 
 import { TokenResponse } from "./types";
-import { TOKEN_SECRET } from "../../variables";
 import { TokenSign } from "../user/types";
-import { adminApp } from "../../firebase";
+
+const DefaultExpireTimeSeconds = 1800;
 
 export const generateAccessToken = async (
-  userCredential: User,
-  expiresInSeconds: number = 1800
+  uid: string,
+  firebaseToken: string,
+  tokenSecret: string,
+  expiresInSeconds: number = DefaultExpireTimeSeconds
 ): Promise<TokenResponse | null> => {
-  const tokenSign: TokenSign = { uid: userCredential.uid };
+  expiresInSeconds =
+    expiresInSeconds > 0 ? expiresInSeconds : DefaultExpireTimeSeconds;
 
-  const token = jwt.sign(tokenSign, TOKEN_SECRET as string, {
-    expiresIn: `${expiresInSeconds}s`,
-  });
-  // const firebaseToken = await userCredential.getIdToken();
-  const firebaseToken = await getAuth(adminApp).createCustomToken(
-    userCredential.uid
-  );
-  adminApp;
+  const token = generateJWTToken(uid, tokenSecret, expiresInSeconds);
+
   return {
     token: token,
     firebaseToken: firebaseToken,
     expiresInSeconds: expiresInSeconds,
   };
+};
+
+export const generateJWTToken = (
+  uid: string,
+  tokenSecret: string,
+  expiresInSeconds: number
+): string => {
+  const tokenSign: TokenSign = { uid: uid };
+
+  const token = jwt.sign(tokenSign, tokenSecret, {
+    expiresIn: `${expiresInSeconds}s`,
+  });
+
+  return token;
 };

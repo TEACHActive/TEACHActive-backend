@@ -1,26 +1,32 @@
 import { DateTime, Duration, DurationUnit } from "luxon";
-import { getAudioFramesBySessionId } from "../engine";
-import { AudioFrame, Channel, Speaker } from "../sessions/types";
+
 import { Response } from "../types";
 import { chunkArrayIntoNumberOfGroups } from "../util";
+import { Speaker, AudioFrame, AudioChannel } from "../sessions/types";
 import {
-  SpeakerDataInSecondsFromFrames,
-  SpeechCombinedDataFrame,
-  SpeechDataCombined,
   SpeechFrame,
+  SpeechDataCombined,
+  SpeechCombinedDataFrame,
+  SpeakerDataInSecondsFromFrames,
   SpeechTotalsInSecondsFromFrames,
 } from "./types";
 
-export const getSpeechDataSession = async (
-  sessionId: string,
-  channel: Channel,
+/**
+ *
+ * @param audioFrames AudioFrames in session
+ * @param channel AudioChannel of the session
+ * @param numSegments Number of segments to chunk data into
+ * @param durationUnit Duration Unit to return time as
+ * @returns
+ */
+export const getSpeechDataInSession = (
+  audioFrames: AudioFrame[],
+  channel: AudioChannel,
   numSegments: number = 10,
   durationUnit: DurationUnit = "minutes"
-): Promise<Response<SpeechFrame[] | null>> => {
-  const audioFrames = await getAudioFramesBySessionId(sessionId, channel);
-
+): Response<SpeechFrame[] | null> => {
   if (audioFrames.length === 0) {
-    return new Response(false, null, 404, `No ${channel} audio frames`);
+    return new Response(false, null, 404, `No audio frames for channel`);
   }
 
   const initialDateTime = audioFrames[0].timestamp;
@@ -85,13 +91,15 @@ export const getSpeechDataSession = async (
   return new Response(true, speechData);
 };
 
-export const getSpeechDataCombinedInSession = async (
-  sessionId: string,
+export const getSpeechDataCombinedInSession = (
+  studentAudioFrames: AudioFrame[],
+  instructorAudioFrames: AudioFrame[],
   numSegments: number = 10,
   minSpeakingAmp: number = 0.005
-): Promise<Response<SpeechDataCombined[] | null>> => {
-  const speechDataCombined = await calculateSpeechDataCombinedInSession(
-    sessionId,
+): Response<SpeechDataCombined[] | null> => {
+  const speechDataCombined = calculateSpeechDataCombinedInSession(
+    studentAudioFrames,
+    instructorAudioFrames,
     minSpeakingAmp,
     "minutes"
   );
@@ -110,7 +118,7 @@ export const getSpeechDataCombinedInSession = async (
     },
     speakerMap: new Map<Speaker, number>(),
     speakerInSeconds: new SpeakerDataInSecondsFromFrames({}),
-    timeDiff: Duration.fromMillis(0).toObject(),
+    // timeDiff: Duration.fromMillis(0).toObject(),
   };
 
   const chunkedSpeechFrames = chunkArrayIntoNumberOfGroups(
@@ -129,7 +137,7 @@ export const getSpeechDataCombinedInSession = async (
           begin: DateTime.min(frame.timestamp, acc.timestamp.begin),
           end: DateTime.max(frame.timestamp, acc.timestamp.end),
         },
-        timeDiff: frame.timeDiff,
+        // timeDiff: frame.timeDiff,
         frameNumber: {
           begin: Math.min(frame.frameNumber, acc.frameNumber.begin),
           avg: acc.frameNumber.avg + frame.frameNumber / length,
@@ -149,12 +157,14 @@ export const getSpeechDataCombinedInSession = async (
   return new Response(true, speechFramesData);
 };
 
-export const getSpeechTotalsInSecondsInSession = async (
-  sessionId: string,
+export const getSpeechTotalsInSecondsInSession = (
+  studentAudioFrames: AudioFrame[],
+  instructorAudioFrames: AudioFrame[],
   minSpeakingAmp: number = 0.005
-): Promise<Response<SpeechTotalsInSecondsFromFrames | null>> => {
-  const speechDataCombined = await calculateSpeechDataCombinedInSession(
-    sessionId,
+): Response<SpeechTotalsInSecondsFromFrames | null> => {
+  const speechDataCombined = calculateSpeechDataCombinedInSession(
+    studentAudioFrames,
+    instructorAudioFrames,
     minSpeakingAmp,
     "seconds"
   );
@@ -166,12 +176,17 @@ export const getSpeechTotalsInSecondsInSession = async (
   return new Response(true, speechTotals);
 };
 
-const countSpeechTotalsForFrames = (frames: SpeechCombinedDataFrame[]) => {
+export const countSpeechTotalsForFrames = (
+  frames: SpeechCombinedDataFrame[]
+) => {
   const speechTotalsMap = new Map<Speaker, number>();
 
   frames.sort((a, b) => a.frameNumber - b.frameNumber);
 
   let previousFrameNumber = 0;
+
+  //Handle first frame
+  // speechTotalsMap.set(frames[0].speaker, 1);
 
   frames.forEach((frame) => {
     speechTotalsMap.set(
@@ -182,26 +197,28 @@ const countSpeechTotalsForFrames = (frames: SpeechCombinedDataFrame[]) => {
     previousFrameNumber = frame.frameNumber;
   });
 
+  speechTotalsMap.set(
+    Speaker.Ambient,
+    speechTotalsMap.get(Speaker.Ambient) || 0
+  );
+  speechTotalsMap.set(
+    Speaker.Instructor,
+    speechTotalsMap.get(Speaker.Instructor) || 0
+  );
+  speechTotalsMap.set(
+    Speaker.Student,
+    speechTotalsMap.get(Speaker.Student) || 0
+  );
+
   return Object.fromEntries(speechTotalsMap);
 };
 
-const calculateSpeechDataCombinedInSession = async (
-  sessionId: string,
+export const calculateSpeechDataCombinedInSession = (
+  studentAudioFrames: AudioFrame[],
+  instructorAudioFrames: AudioFrame[],
   minSpeakingAmp: number = 0.005,
   unit: "minutes" | "seconds"
-): Promise<SpeechCombinedDataFrame[]> => {
-  let studentAudioFrames, instructorAudioFrames;
-
-  //Get both sets of audio frames
-  instructorAudioFrames = await getAudioFramesBySessionId(
-    sessionId,
-    Channel.Instructor
-  );
-  studentAudioFrames = await getAudioFramesBySessionId(
-    sessionId,
-    Channel.Student
-  );
-
+): SpeechCombinedDataFrame[] => {
   // This condidtion will need to be modified
   if (
     instructorAudioFrames &&
@@ -210,52 +227,69 @@ const calculateSpeechDataCombinedInSession = async (
     studentAudioFrames.length > 0
   ) {
     //Grab the inital timestamps for both frame sets
-    const instructorInitialDateTime = instructorAudioFrames[0].timestamp;
-    const studentInitialDateTime = studentAudioFrames[0].timestamp;
+    // const instructorInitialDateTime = instructorAudioFrames[0].timestamp;
+    // const studentInitialDateTime = studentAudioFrames[0].timestamp;
 
-    //Calculate time diffs for instructor frames
-    instructorAudioFrames = instructorAudioFrames.map((frame: AudioFrame) => {
-      let timeDiff = frame.timestamp
-        .diff(instructorInitialDateTime, unit)
-        .toObject();
-      timeDiff[unit] = Math.round(timeDiff[unit] || 0);
+    // //Calculate time diffs for instructor frames
+    // instructorAudioFrames = instructorAudioFrames.map((frame: AudioFrame) => {
+    //   let timeDiff = frame.timestamp
+    //     .diff(instructorInitialDateTime, unit)
+    //     .toObject();
+    //   timeDiff[unit] = Math.round(timeDiff[unit] || 0);
 
-      return {
-        ...frame,
-        timeDiff: timeDiff,
-      };
-    });
+    //   return {
+    //     ...frame,
+    //     timeDiff: timeDiff,
+    //   };
+    // });
 
-    //Calculate time diffs for student frames
-    studentAudioFrames = studentAudioFrames.map((frame: AudioFrame) => {
-      let timeDiff = frame.timestamp
-        .diff(studentInitialDateTime, unit)
-        .toObject();
-      timeDiff[unit] = Math.round(timeDiff[unit] || 0);
+    // //Calculate time diffs for student frames
+    // studentAudioFrames = studentAudioFrames.map((frame: AudioFrame) => {
+    //   let timeDiff = frame.timestamp
+    //     .diff(studentInitialDateTime, unit)
+    //     .toObject();
+    //   timeDiff[unit] = Math.round(timeDiff[unit] || 0);
 
-      return {
-        ...frame,
-        timeDiff: timeDiff,
-      };
-    });
+    //   return {
+    //     ...frame,
+    //     timeDiff: timeDiff,
+    //   };
+    // });
 
     //Loop through min num of frames between each
     let speakerData = [];
+
     for (
       let i = 0;
       i < Math.min(instructorAudioFrames.length, studentAudioFrames.length);
       i++
     ) {
+      // const insAmpAvg =
+      //   (instructorAudioFrames[i - 2].amplitude +
+      //     instructorAudioFrames[i - 1].amplitude +
+      //     instructorAudioFrames[i].amplitude +
+      //     instructorAudioFrames[i + 1].amplitude +
+      //     instructorAudioFrames[i + 2].amplitude) /
+      //   3.0;
+      // const stuAmpAvg =
+      //   (studentAudioFrames[i - 2].amplitude +
+      //     studentAudioFrames[i - 1].amplitude +
+      //     studentAudioFrames[i].amplitude +
+      //     studentAudioFrames[i + 1].amplitude +
+      //     studentAudioFrames[i + 2].amplitude) /
+      //   3.0;
       const insAmp = instructorAudioFrames[i].amplitude;
       const stuAmp = studentAudioFrames[i].amplitude;
-      let timeDiff = instructorAudioFrames[i].timestamp
-        .diff(instructorInitialDateTime, unit)
-        .toObject();
-      timeDiff[unit] = Math.round(timeDiff[unit] || 0);
+      // let timeDiff = instructorAudioFrames[i].timestamp
+      //   .diff(instructorInitialDateTime, unit)
+      //   .toObject();
+      // timeDiff[unit] = Math.round(timeDiff[unit] || 0);
 
       //Find speaker (who is speaking loudest or if no one can be considered speaking)
       let speaker;
-      if (insAmp < minSpeakingAmp && stuAmp < minSpeakingAmp) {
+      if (insAmp === 0 && stuAmp === 0) {
+        speaker = Speaker.Silent;
+      } else if (insAmp < minSpeakingAmp && stuAmp < minSpeakingAmp) {
         speaker = Speaker.Ambient;
       } else {
         speaker = insAmp > stuAmp ? Speaker.Instructor : Speaker.Student;
@@ -265,7 +299,7 @@ const calculateSpeechDataCombinedInSession = async (
       speakerData.push({
         frameNumber: instructorAudioFrames[i].frameNumber,
         speaker: speaker,
-        timeDiff: timeDiff,
+        // timeDiff: timeDiff,
         timestamp: instructorAudioFrames[i].timestamp,
       });
     }

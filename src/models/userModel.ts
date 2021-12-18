@@ -1,14 +1,16 @@
 import mongoose, { Schema } from "mongoose";
 
 export class User {
-  uid: String;
-  email: String;
-  name: String;
+  uid: string;
+  email: string;
+  name: string;
+  isAdmin: boolean;
 
   constructor(data: any) {
     this.uid = data.uid;
     this.email = data.email;
     this.name = data.name;
+    this.isAdmin = data.isAdmin;
   }
 }
 
