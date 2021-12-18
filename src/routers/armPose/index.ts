@@ -2,9 +2,8 @@ import express from "express";
 
 import {
   getArmPoseDataInSession,
-  getArmPoseTotalsInSecondsInSession,
+  getArmPoseTotalsInSession,
 } from "./controller";
-import { Response } from "../types";
 import {
   ensureValidInput,
   authenticateToken,
@@ -12,6 +11,8 @@ import {
   sessionIdParamValidator,
   numSegmentsQueryValidator,
 } from "../middleware";
+import { Response } from "../types";
+import * as Const from "../../variables";
 import { VideoChannel } from "../sessions/types";
 import { getVideoFramesBySessionId } from "../engine";
 
@@ -34,9 +35,13 @@ router.get(
     try {
       const videoFrames = await getVideoFramesBySessionId(
         sessionId,
-        VideoChannel.Student
+        VideoChannel.Student,
+        {
+          username: Const.DB_USER,
+          password: Const.DB_PASS,
+        }
       );
-      response = await getArmPoseTotalsInSecondsInSession(videoFrames);
+      response = await getArmPoseTotalsInSession(videoFrames);
     } catch (error) {
       console.error(error);
 
@@ -71,7 +76,11 @@ router.get(
     try {
       const videoFrames = await getVideoFramesBySessionId(
         sessionId,
-        VideoChannel.Student
+        VideoChannel.Student,
+        {
+          username: Const.DB_USER,
+          password: Const.DB_PASS,
+        }
       );
       response = await getArmPoseDataInSession(
         videoFrames,

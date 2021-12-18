@@ -2,6 +2,7 @@ import axios from "axios";
 import { DateTime } from "luxon";
 
 import { MethodType } from "./types";
+// import * as Const from "../variables";
 import { getAxiosConfig } from "./util";
 import { TokenSign } from "./user/types";
 import {
@@ -17,15 +18,15 @@ export const getCameraFPS = (): number => {
   return 15; // TODO:  get actual fps
 };
 
-export const ParseVideoChannel = (channel: string): VideoChannel | null => {
+export const ParseVideoChannel = (channel: string): VideoChannel => {
   if (channel !== VideoChannel.Instructor && channel !== VideoChannel.Student) {
-    return null;
+    throw new Error("Unknown video channel");
   }
   return channel;
 };
-export const ParseAudioChannel = (channel: string): AudioChannel | null => {
+export const ParseAudioChannel = (channel: string): AudioChannel => {
   if (channel !== AudioChannel.Instructor && channel !== AudioChannel.Student) {
-    return null;
+    throw new Error("Unknown audio channel");
   }
   return channel;
 };
@@ -67,6 +68,10 @@ export const userOwnsSession = async (
 export const getVideoFramesBySessionId = async (
   sessionID: string,
   channel: VideoChannel,
+  edusenseAuth: {
+    username: string;
+    password: string;
+  },
   serialize: boolean = false
 ): Promise<VideoFrame[]> => {
   const data = JSON.stringify({
@@ -97,7 +102,7 @@ export const getVideoFramesBySessionId = async (
               }`,
     variables: {},
   });
-  const config = getAxiosConfig(MethodType.Post, "/query", data);
+  const config = getAxiosConfig(MethodType.Post, "/query", data, edusenseAuth);
 
   const response = await axios.request(config);
 
@@ -145,14 +150,23 @@ export const getVideoFramesBySessionId = async (
 export const getAudioFramesBySessionId = async (
   sessionID: string,
   channel: AudioChannel,
+  edusenseAuth: {
+    username: string;
+    password: string;
+  },
   serialize: boolean = false
 ): Promise<AudioFrame[]> => {
-  let edusenseResponse = await makeAudioFrameQuery(sessionID, channel);
+  let edusenseResponse = await makeAudioFrameQuery(
+    sessionID,
+    channel,
+    edusenseAuth
+  );
 
   if (!edusenseResponse.data) {
     edusenseResponse = await makeAudioFrameQuery(
       sessionID,
       channel,
+      edusenseAuth,
       "edusense-audio" // TODO: Adjust this???
     );
   }
@@ -194,6 +208,10 @@ export const getAudioFramesBySessionId = async (
 const makeAudioFrameQuery = async (
   sessionID: string,
   channel: AudioChannel,
+  edusenseAuth: {
+    username: string;
+    password: string;
+  },
   schema: string = "0.1.0"
 ) => {
   const data = JSON.stringify({
@@ -215,7 +233,7 @@ const makeAudioFrameQuery = async (
   }`,
     variables: {},
   });
-  const config = getAxiosConfig(MethodType.Post, "/query", data);
+  const config = getAxiosConfig(MethodType.Post, "/query", data, edusenseAuth);
 
   const response = await axios.request(config);
 

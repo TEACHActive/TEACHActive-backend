@@ -114,7 +114,7 @@ export class VideoFrame {
     );
   }
 
-  serialize = () => {
+  serialize = (): VideoFrame | null => {
     return {
       ...this,
       people: this.people.map((person) => person.serialize()),

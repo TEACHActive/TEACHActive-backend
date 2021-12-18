@@ -4,9 +4,10 @@ import { getCameraFPS } from "../engine";
 import { chunkArrayIntoNumberOfGroups } from "../util";
 import { ArmPose, Person, VideoFrame } from "../sessions/types";
 
-export const getArmPoseTotalsInSecondsInSession = async (
-  videoFrames: VideoFrame[]
-): Promise<Response<ArmPoseData | null>> => {
+export const getArmPoseTotalsInSession = (
+  videoFrames: VideoFrame[],
+  durationUnit: "seconds" | "minutes" = "seconds"
+): Response<ArmPoseData | null> => {
   const armPoseMap = countArmPosesFromFrames(videoFrames).reduce(
     (map: Map<string, number>, frameCountMap) => {
       Object.keys(frameCountMap.countMap).map((key) => {
@@ -21,7 +22,22 @@ export const getArmPoseTotalsInSecondsInSession = async (
   let armPoseStatsInSecondsMap = new Map();
   Object.keys(Object.fromEntries(armPoseMap)).forEach((key) => {
     const statInFrames = armPoseMap.get(key);
-    armPoseStatsInSecondsMap.set(key, (statInFrames || 0) / getCameraFPS());
+    switch (durationUnit) {
+      // Convert to correct unit of time
+      case "minutes":
+        armPoseStatsInSecondsMap.set(
+          key,
+          (statInFrames || 0) / getCameraFPS() / 60
+        );
+        break;
+      case "seconds":
+        armPoseStatsInSecondsMap.set(key, (statInFrames || 0) / getCameraFPS());
+        break;
+      default:
+        // Default use seconds
+        armPoseStatsInSecondsMap.set(key, (statInFrames || 0) / getCameraFPS());
+        break;
+    }
   });
 
   const armPoseStatsInSeconds = new ArmPoseData(

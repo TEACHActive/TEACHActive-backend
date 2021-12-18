@@ -6,19 +6,13 @@ import {
 } from "./types";
 import { Response } from "../types";
 import { chunkArrayIntoNumberOfGroups } from "../util";
-import { getVideoFramesBySessionId } from "../engine";
-import { BodyPart, VideoChannel, VideoFrame } from "../sessions/types";
+import { BodyPart, VideoFrame } from "../sessions/types";
 
 export const getInstructorMovementDataInSession = async (
-  sessionId: string,
+  videoFrames: VideoFrame[],
   numSegments: number = 10,
   durationUnit: DurationUnit = "minutes"
 ): Promise<Response<InstructorMovementFrameResponse[] | null>> => {
-  const videoFrames = await getVideoFramesBySessionId(
-    sessionId,
-    VideoChannel.Instructor
-  );
-
   if (videoFrames.length === 0) {
     return new Response(false, null, 404, "No Instructor video frames");
   }

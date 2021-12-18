@@ -18,7 +18,9 @@ const tokenSecret =
 
 const defaultExpireTimeSeconds = 1800;
 
-describe("generateAccessToken", () => {}); // TODO: ?
+describe("generateAccessToken", () => {
+  it("", () => {}); // TODO: Impliment Test
+});
 
 describe("generateJWTToken", () => {
   it("Generates a jwt token", () => {

@@ -1,5 +1,4 @@
 import { MethodType } from "./types";
-import * as Const from "../variables";
 
 const BASE_URL_HTTPS = "https://teachactive.engineering.iastate.edu";
 const EDUSENSE_STORAGE_URL = BASE_URL_HTTPS + ":5000";
@@ -8,7 +7,11 @@ const EDUSENSE_STORAGE_URL_DEV = BASE_URL_HTTPS + ":5001";
 export const getAxiosConfig = (
   method: MethodType,
   endpoint: string,
-  data?: any
+  data?: any,
+  auth?: {
+    username: string;
+    password: string;
+  }
 ) => {
   const env = process.env.NODE_ENV || "development";
 
@@ -19,10 +22,7 @@ export const getAxiosConfig = (
     method: method,
     url: `${URL}${endpoint}`,
     data: data,
-    auth: {
-      username: Const.DB_USER || "",
-      password: Const.DB_PASS || "",
-    },
+    auth: auth,
   };
 };
 

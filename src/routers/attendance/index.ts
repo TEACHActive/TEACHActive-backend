@@ -7,6 +7,7 @@ import {
   sessionIdParamValidator,
 } from "../middleware";
 import { Response } from "../types";
+import * as Const from "../../variables";
 import { VideoChannel } from "../sessions/types";
 import { getAttendanceInSession } from "./controller";
 import { getVideoFramesBySessionId } from "../engine";
@@ -30,7 +31,11 @@ router.get(
     try {
       const videoFrames = await getVideoFramesBySessionId(
         sessionId,
-        VideoChannel.Student
+        VideoChannel.Student,
+        {
+          username: Const.DB_USER,
+          password: Const.DB_PASS,
+        }
       );
       response = await getAttendanceInSession(videoFrames);
     } catch (error) {

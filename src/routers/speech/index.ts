@@ -1,6 +1,7 @@
 import express from "express";
 
 import { Response } from "../types";
+import * as Const from "../../variables";
 import {
   getSpeechDataInSession,
   getSpeechDataCombinedInSession,
@@ -11,7 +12,6 @@ import {
   authenticateToken,
   ensureUserOwnsSession,
   sessionIdParamValidator,
-  ensureQueryContainsConstructor,
   numSegmentsQueryValidator,
   minSpeakingAmpQueryValidator,
 } from "../middleware";
@@ -40,7 +40,11 @@ router.get(
     try {
       const audioFrames = await getAudioFramesBySessionId(
         sessionId,
-        AudioChannel.Student
+        AudioChannel.Student,
+        {
+          username: Const.DB_USER,
+          password: Const.DB_PASS,
+        }
       );
       response = await getSpeechDataInSession(
         audioFrames,
@@ -79,7 +83,11 @@ router.get(
     try {
       const audioFrames = await getAudioFramesBySessionId(
         sessionId,
-        AudioChannel.Instructor
+        AudioChannel.Instructor,
+        {
+          username: Const.DB_USER,
+          password: Const.DB_PASS,
+        }
       );
       response = await getSpeechDataInSession(
         audioFrames,
@@ -121,11 +129,19 @@ router.get(
     try {
       const studentAudioFrames = await getAudioFramesBySessionId(
         sessionId,
-        AudioChannel.Instructor
+        AudioChannel.Instructor,
+        {
+          username: Const.DB_USER,
+          password: Const.DB_PASS,
+        }
       );
       const instructorAudioFrames = await getAudioFramesBySessionId(
         sessionId,
-        AudioChannel.Student
+        AudioChannel.Student,
+        {
+          username: Const.DB_USER,
+          password: Const.DB_PASS,
+        }
       );
 
       response = await getSpeechDataCombinedInSession(
@@ -166,11 +182,19 @@ router.get(
     try {
       const studentAudioFrames = await getAudioFramesBySessionId(
         sessionId,
-        AudioChannel.Instructor
+        AudioChannel.Instructor,
+        {
+          username: Const.DB_USER,
+          password: Const.DB_PASS,
+        }
       );
       const instructorAudioFrames = await getAudioFramesBySessionId(
         sessionId,
-        AudioChannel.Student
+        AudioChannel.Student,
+        {
+          username: Const.DB_USER,
+          password: Const.DB_PASS,
+        }
       );
       response = getSpeechTotalsInSecondsInSession(
         studentAudioFrames,

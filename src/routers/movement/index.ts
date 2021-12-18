@@ -1,6 +1,9 @@
 import express from "express";
 
 import { Response } from "../types";
+import * as Const from "../../variables";
+import { VideoChannel } from "../sessions/types";
+import { getVideoFramesBySessionId } from "../engine";
 import { getInstructorMovementDataInSession } from "./controller";
 import {
   ensureValidInput,
@@ -29,8 +32,16 @@ router.get(
 
     let response;
     try {
-      response = await getInstructorMovementDataInSession(
+      const videoFrames = await getVideoFramesBySessionId(
         sessionId,
+        VideoChannel.Instructor,
+        {
+          username: Const.DB_USER,
+          password: Const.DB_PASS,
+        }
+      );
+      response = await getInstructorMovementDataInSession(
+        videoFrames,
         parseInt(numSegments)
       );
     } catch (error) {

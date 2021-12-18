@@ -1,19 +1,7 @@
 import { Response } from "../types";
+import { Session } from "./types";
+import { getCameraFPS } from "../engine";
 import { SessionModel } from "../../models/sessionModel";
-import {
-  AudioFrame,
-  VideoChannel,
-  Session,
-  VideoFrame,
-  AudioChannel,
-} from "./types";
-import {
-  getCameraFPS,
-  isAdminRequest,
-  getVideoFramesBySessionId,
-  getAudioFramesBySessionId,
-} from "../engine";
-import { TokenSign } from "../user/types";
 
 /**
  * Get sessions stored in Mongo
@@ -65,54 +53,54 @@ export const updateSessionNameBySessionId = async (
   return new Response(true, new Session(result, getCameraFPS()));
 };
 
-export const getVideoFramesInSession = async (
-  sessionId: string,
-  channel: VideoChannel | null,
-  userSessions?: Session[]
-): Promise<Response<VideoFrame[] | null>> => {
-  if (!channel) {
-    return new Response(false, null, 400, "Invalid channel name");
-  }
+// export const getVideoFramesInSession = async (
+//   sessionId: string,
+//   channel: VideoChannel | null,
+//   userSessions?: Session[]
+// ): Promise<Response<VideoFrame[] | null>> => {
+//   if (!channel) {
+//     return new Response(false, null, 400, "Invalid channel name");
+//   }
 
-  if (!userSessions) {
-    return new Response(false, null, 403, "User has no sessions");
-  }
+//   if (!userSessions) {
+//     return new Response(false, null, 403, "User has no sessions");
+//   }
 
-  const userSession = userSessions.find((session) => session.id === sessionId);
-  if (!userSession) {
-    return new Response(
-      false,
-      null,
-      404,
-      "No matching session for given sessionId and user"
-    );
-  }
-  const videoFrames = await getVideoFramesBySessionId(userSession.id, channel);
-  return new Response(true, videoFrames);
-};
+//   const userSession = userSessions.find((session) => session.id === sessionId);
+//   if (!userSession) {
+//     return new Response(
+//       false,
+//       null,
+//       404,
+//       "No matching session for given sessionId and user"
+//     );
+//   }
 
-export const getAudioFramesInSession = async (
-  sessionId: string,
-  channel: AudioChannel | null,
-  userSessions?: Session[]
-): Promise<Response<AudioFrame[] | null>> => {
-  if (!channel) {
-    return new Response(false, null, 400, "Invalid channel name");
-  }
+//   return new Response(true, videoFrames);
+// };
 
-  if (!userSessions) {
-    return new Response(false, null, 403, "User has no sessions");
-  }
+// export const getAudioFramesInSession = async (
+//   sessionId: string,
+//   channel: AudioChannel | null,
+//   userSessions?: Session[]
+// ): Promise<Response<AudioFrame[] | null>> => {
+//   if (!channel) {
+//     return new Response(false, null, 400, "Invalid channel name");
+//   }
 
-  const userSession = userSessions.find((session) => session.id === sessionId);
-  if (!userSession) {
-    return new Response(
-      false,
-      null,
-      404,
-      "No matching session for given sessionId and user"
-    );
-  }
-  const audioFrames = await getAudioFramesBySessionId(userSession.id, channel);
-  return new Response(true, audioFrames);
-};
+//   if (!userSessions) {
+//     return new Response(false, null, 403, "User has no sessions");
+//   }
+
+//   const userSession = userSessions.find((session) => session.id === sessionId);
+//   if (!userSession) {
+//     return new Response(
+//       false,
+//       null,
+//       404,
+//       "No matching session for given sessionId and user"
+//     );
+//   }
+//   const audioFrames = await getAudioFramesBySessionId(userSession.id, channel);
+//   return new Response(true, audioFrames);
+// };

@@ -1,18 +1,16 @@
 import express from "express";
 
 import { Response } from "../types";
+import * as Const from "../../variables";
+import { TokenSign } from "../user/types";
+import { getSessions, updateSessionNameBySessionId } from "./controller";
 import {
   isAdminRequest,
-  ParseAudioChannel,
   ParseVideoChannel,
+  ParseAudioChannel,
+  getVideoFramesBySessionId,
+  getAudioFramesBySessionId,
 } from "../engine";
-import { TokenSign } from "../user/types";
-import {
-  getSessions,
-  getVideoFramesInSession,
-  getAudioFramesInSession,
-  updateSessionNameBySessionId,
-} from "./controller";
 import {
   ensureValidInput,
   authenticateToken,
@@ -108,18 +106,16 @@ router.get(
 
     let response;
     try {
-      const _req: any = req;
-      const tokenSign: TokenSign = _req.user;
       const parsedChannel = ParseVideoChannel(channel);
-      const userSessions = await getSessions(
-        tokenSign.uid,
-        await isAdminRequest(tokenSign)
-      );
-      response = await getVideoFramesInSession(
+      const videoFrames = await getVideoFramesBySessionId(
         sessionId,
         parsedChannel,
-        userSessions.data || undefined
+        {
+          username: Const.DB_USER,
+          password: Const.DB_PASS,
+        }
       );
+      response = new Response(true, videoFrames);
     } catch (error) {
       response = new Response(
         false,
@@ -149,25 +145,25 @@ router.get(
 
     let response;
     try {
-      const _req: any = req;
-      const tokenSign: TokenSign = _req.user;
       const parsedChannel = ParseAudioChannel(channel);
-      const userSessions = await getSessions(
-        tokenSign.uid,
-        await isAdminRequest(tokenSign)
-      );
 
-      response = await getAudioFramesInSession(
+      const audioFrames = await getAudioFramesBySessionId(
         sessionId,
         parsedChannel,
-        userSessions.data || undefined
+        {
+          username: Const.DB_USER,
+          password: Const.DB_PASS,
+        }
       );
+
+      response = new Response(true, audioFrames);
     } catch (error) {
       response = new Response(
         false,
         null,
         500,
-        "Server error when getting audio frames"
+        "Server error when getting audio frames",
+        error
       );
     }
 

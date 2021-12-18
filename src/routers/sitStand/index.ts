@@ -1,5 +1,4 @@
 import express from "express";
-import { getVideoFramesBySessionId } from "../engine";
 
 import {
   ensureValidInput,
@@ -9,7 +8,9 @@ import {
   numSegmentsQueryValidator,
 } from "../middleware";
 import { Response } from "../types";
+import * as Const from "../../variables";
 import { VideoChannel } from "../sessions/types";
+import { getVideoFramesBySessionId } from "../engine";
 import { getSitStandDataInSession } from "./controller";
 
 const router = express.Router();
@@ -33,7 +34,11 @@ router.get(
     try {
       const videoFrames = await getVideoFramesBySessionId(
         sessionId,
-        VideoChannel.Student
+        VideoChannel.Student,
+        {
+          username: Const.DB_USER,
+          password: Const.DB_PASS,
+        }
       );
       response = await getSitStandDataInSession(
         videoFrames,

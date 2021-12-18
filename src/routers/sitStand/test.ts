@@ -1,9 +1,9 @@
 require("dotenv").config();
 
 describe("getSitStandDataInSession", () => {
-  it("", () => {});
+  it("", () => {}); // TODO: Impliment Test
 });
 
 describe("countSitStandInFrame", () => {
-  it("", () => {});
+  it("", () => {}); // TODO: Impliment Test
 });
