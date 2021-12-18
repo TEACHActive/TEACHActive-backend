@@ -1,14 +1,12 @@
-import jwt from "jsonwebtoken";
-
 import { User } from "../../models/userModel";
 import { generateJWTToken } from "./controller";
 
-const adminUser = new User({
-  uid: "ABCDEFGHIJKLMNOPQRSTUVWXYZAB",
-  email: "expressTest@example.com",
-  name: "TestAdminUser",
-  isAdmin: true,
-});
+// const adminUser = new User({
+//   uid: "ABCDEFGHIJKLMNOPQRSTUVWXYZAB",
+//   email: "expressTest@example.com",
+//   name: "TestAdminUser",
+//   isAdmin: true,
+// });
 const user = new User({
   uid: "BCDEFGHIJKLMNOPQRSTUVWXYZABC",
   email: "expressTest2@example.com",
@@ -20,7 +18,7 @@ const tokenSecret =
 
 const defaultExpireTimeSeconds = 1800;
 
-describe("generateAccessToken", () => {}); // Todo
+describe("generateAccessToken", () => {}); // TODO: ?
 
 describe("generateJWTToken", () => {
   it("Generates a jwt token", () => {

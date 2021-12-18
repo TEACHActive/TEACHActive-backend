@@ -35,7 +35,7 @@ export interface InstructorMovementFrameResponse {
   };
   timeDiff: DurationObject;
   instructor: {
-    //Todo: may benifit from adding quantiles (ex instructor gets mixed with students and that pulls avg down)
+    // TODO: may benifit from adding quantiles (ex instructor gets mixed with students and that pulls avg down)
     avg: {
       xPos: number;
       yPos: number;

@@ -14,7 +14,7 @@ import { getSessions } from "./sessions/controller";
 import { UserModel } from "../models/userModel";
 
 export const getCameraFPS = (): number => {
-  return 15; //Todo: get actual fps
+  return 15; // TODO:  get actual fps
 };
 
 export const ParseVideoChannel = (channel: string): VideoChannel | null => {
@@ -153,7 +153,7 @@ export const getAudioFramesBySessionId = async (
     edusenseResponse = await makeAudioFrameQuery(
       sessionID,
       channel,
-      "edusense-audio" //Todo: Adjust this???
+      "edusense-audio" // TODO: Adjust this???
     );
   }
 

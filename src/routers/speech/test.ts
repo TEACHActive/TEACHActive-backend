@@ -90,7 +90,7 @@ describe("getSpeechDataInSession", () => {
   });
 });
 describe("getSpeechDataCombinedInSession", () => {
-  //Todo
+  // TODO: ?
 });
 describe("getSpeechTotalsInSecondsInSession", () => {
   it("Returns correct ambiant time", () => {
@@ -224,5 +224,5 @@ describe("countSpeechTotalsForFrames", () => {
 });
 
 describe("calculateSpeechDataCombinedInSession", () => {
-  //Todo
+  // TODO: ?
 });

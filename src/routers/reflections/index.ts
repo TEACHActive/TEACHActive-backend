@@ -195,7 +195,7 @@ router.delete(
 /**
  * Get Reflections for session
  */
-const getAllCreatedReflectionsEndpoint = `/admin/all`; //Todo change this endpoint now that directory "/admin" is being served using nginx
+const getAllCreatedReflectionsEndpoint = `/admin/all`; // TODO: change this endpoint now that directory "/admin" is being served using nginx
 router.get(
   getAllCreatedReflectionsEndpoint,
   ensureUserIsAdmin,
