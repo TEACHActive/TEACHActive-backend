@@ -1,5 +1,3 @@
-require("dotenv").config();
-
 describe("getSitStandDataInSession", () => {
   it("", () => {}); // TODO: Impliment Test
 });

@@ -1,5 +1,3 @@
-require("dotenv").config();
-
 describe("getSessions", () => {
   it("", () => {}); // TODO: Impliment Test
 });

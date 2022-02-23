@@ -1,3 +1,5 @@
+import { DateTime, DurationObject } from "luxon";
+
 export class Response<T> {
   success: boolean;
   data: T | null;
@@ -24,4 +26,12 @@ export enum MethodType {
   Post = "post",
   Get = "get",
   Put = "put",
+}
+
+export interface IWithTimeDiff {
+  timeDiff: DurationObject;
+}
+
+export interface IWithTimestamp {
+  timestamp: DateTime;
 }

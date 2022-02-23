@@ -144,7 +144,7 @@ router.get(
         }
       );
 
-      response = await getSpeechDataCombinedInSession(
+      response = getSpeechDataCombinedInSession(
         studentAudioFrames,
         instructorAudioFrames,
         parseInt(numSegments),
@@ -171,7 +171,6 @@ const getSpeechTotalsInSessionEndpoint = `/totals/seconds/:sessionId`;
 router.get(
   getSpeechTotalsInSessionEndpoint,
   sessionIdParamValidator,
-  numSegmentsQueryValidator,
   minSpeakingAmpQueryValidator,
   ensureValidInput,
   ensureUserOwnsSession,

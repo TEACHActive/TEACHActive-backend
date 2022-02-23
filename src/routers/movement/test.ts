@@ -1,5 +1,3 @@
-require("dotenv").config();
-
 describe("getInstructorMovementDataInSession", () => {
   it("", () => {}); // TODO: Impliment Test
 });

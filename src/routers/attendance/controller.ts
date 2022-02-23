@@ -2,11 +2,11 @@ import { Response } from "../types";
 import { AttendanceStats } from "./types";
 import { VideoFrame } from "../sessions/types";
 
-export const getAttendanceInSession = async (
+export const getAttendanceFromVideoFrames = (
   videoFrames: VideoFrame[]
-): Promise<Response<AttendanceStats | null>> => {
+): Response<AttendanceStats | null> => {
   if (videoFrames.length === 0) {
-    return new Response(false, null, 404, "No Student video frames");
+    return new Response(false, null, 404, "No video frames");
   }
   const defaultAttendance = {
     avg: 0,

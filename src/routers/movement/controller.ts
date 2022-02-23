@@ -5,7 +5,7 @@ import {
   InstructorMovementFrameResponse,
 } from "./types";
 import { Response } from "../types";
-import { chunkArrayIntoNumberOfGroups } from "../util";
+import { chunkArrayIntoMinutes, chunkArrayIntoNumberOfGroups } from "../util";
 import { BodyPart, VideoFrame } from "../sessions/types";
 
 export const getInstructorMovementDataInSession = async (
@@ -13,8 +13,10 @@ export const getInstructorMovementDataInSession = async (
   numSegments: number = 10,
   durationUnit: DurationUnit = "minutes"
 ): Promise<Response<InstructorMovementFrameResponse[] | null>> => {
-  if (videoFrames.length === 0) {
-    return new Response(false, null, 404, "No Instructor video frames");
+  const chunkedVideoFrames = chunkArrayIntoMinutes(videoFrames, numSegments);
+
+  if (chunkedVideoFrames.length === 0) {
+    return new Response(false, null, 500, "No Instructor video framesy");
   }
 
   const instructor = calculateInstructorInFrame(videoFrames[0]);

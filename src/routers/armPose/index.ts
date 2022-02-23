@@ -10,6 +10,7 @@ import {
   ensureUserOwnsSession,
   sessionIdParamValidator,
   numSegmentsQueryValidator,
+  durationUnitParamValidator,
 } from "../middleware";
 import { Response } from "../types";
 import * as Const from "../../variables";
@@ -20,16 +21,17 @@ const router = express.Router();
 router.use(authenticateToken);
 
 /**
- * Get Arm Pose totals in session
+ * Get Arm Pose totals in Session
  */
-const getArmPoseTotalsInSessionEndpoint = `/totals/seconds/:sessionId`;
+const getArmPoseTotalsInSessionEndpoint = `/totals/:unit/:sessionId`;
 router.get(
   getArmPoseTotalsInSessionEndpoint,
   sessionIdParamValidator,
+  durationUnitParamValidator,
   ensureValidInput,
   ensureUserOwnsSession,
   async (req, res) => {
-    const { sessionId } = req.params!;
+    const { sessionId, unit } = req.params!;
 
     let response;
     try {
@@ -41,7 +43,7 @@ router.get(
           password: Const.DB_PASS,
         }
       );
-      response = await getArmPoseTotalsInSession(videoFrames);
+      response = getArmPoseTotalsInSession(videoFrames, unit);
     } catch (error) {
       console.error(error);
 

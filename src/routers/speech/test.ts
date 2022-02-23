@@ -1,11 +1,8 @@
-require("dotenv").config();
-
 import { DateTime, DurationUnit } from "luxon";
 
 import { AudioChannel, AudioFrame, Speaker } from "../sessions/types";
 import { SpeechCombinedDataFrame } from "./types";
 import {
-  countSpeechTotalsForFrames,
   getSpeechDataInSession,
   getSpeechTotalsInSecondsInSession,
 } from "./controller";
@@ -187,42 +184,4 @@ describe("getSpeechTotalsInSecondsInSession", () => {
 
     expect(result.data?.ambient).toBe(0);
   });
-});
-
-describe("countSpeechTotalsForFrames", () => {
-  it("Counts total number of frames", () => {
-    //Setup
-    const helper = new SpeechTestHelper();
-    const speakerOrder: SpeechCombinedDataFrame[] = [
-      helper.constructCombinedSpeechDataFrame(Speaker.Instructor),
-      helper.constructCombinedSpeechDataFrame(Speaker.Student),
-      helper.constructCombinedSpeechDataFrame(Speaker.Student),
-      helper.constructCombinedSpeechDataFrame(Speaker.Ambient),
-      helper.constructCombinedSpeechDataFrame(Speaker.Instructor),
-    ];
-
-    //Eval
-    const result = countSpeechTotalsForFrames(speakerOrder);
-
-    //Test
-    expect(result[Speaker.Ambient]).toBe(1);
-    expect(result[Speaker.Instructor]).toBe(2);
-    expect(result[Speaker.Student]).toBe(2);
-  });
-  it("Counts number of frames with gap", () => {
-    const helper = new SpeechTestHelper();
-    const speakerOrder: SpeechCombinedDataFrame[] = [
-      helper.constructCombinedSpeechDataFrame(Speaker.Instructor),
-      helper.constructCombinedSpeechDataFrame(Speaker.Instructor, 1000, 9),
-    ];
-    const result = countSpeechTotalsForFrames(speakerOrder);
-
-    expect(result[Speaker.Ambient]).toBe(0);
-    expect(result[Speaker.Instructor]).toBe(10);
-    expect(result[Speaker.Student]).toBe(0);
-  });
-});
-
-describe("calculateSpeechDataCombinedInSession", () => {
-  it("", () => {}); // TODO: Impliment Test
 });

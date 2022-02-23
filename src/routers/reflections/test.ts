@@ -1,5 +1,3 @@
-require("dotenv").config();
-
 describe("getReflectionSectionsForSession", () => {
   it("", () => {}); // TODO: Impliment Test
 });

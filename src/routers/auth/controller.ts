@@ -5,12 +5,12 @@ import { TokenSign } from "../user/types";
 
 const DefaultExpireTimeSeconds = 1800;
 
-export const generateAccessToken = async (
+export const generateAccessToken = (
   uid: string,
   firebaseToken: string,
   tokenSecret: string,
   expiresInSeconds: number = DefaultExpireTimeSeconds
-): Promise<TokenResponse | null> => {
+): TokenResponse | null => {
   expiresInSeconds =
     expiresInSeconds > 0 ? expiresInSeconds : DefaultExpireTimeSeconds;
 
@@ -23,7 +23,7 @@ export const generateAccessToken = async (
   };
 };
 
-export const generateJWTToken = (
+const generateJWTToken = (
   uid: string,
   tokenSecret: string,
   expiresInSeconds: number

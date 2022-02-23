@@ -1,5 +1,3 @@
-require("dotenv").config();
-
 describe("getSessionPerformanceForSession", () => {
   it("", () => {}); // TODO: Impliment Test
 });

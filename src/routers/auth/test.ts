@@ -1,5 +1,5 @@
 import { User } from "../../models/userModel";
-import { generateJWTToken } from "./controller";
+import { generateAccessToken } from "./controller";
 
 // const adminUser = new User({
 //   uid: "ABCDEFGHIJKLMNOPQRSTUVWXYZAB",
@@ -15,29 +15,32 @@ const user = new User({
 });
 const tokenSecret =
   "HBZtzz0H+SyMoaZ5gfaQL781BUi1wJ+d+z3JXi7cSFyfjUMTMZra12UO1JLZIQjl/hxhk3dngTAVY/hO";
+const firebaseTokenFake = "XXYYZZ";
 
 const defaultExpireTimeSeconds = 1800;
 
 describe("generateAccessToken", () => {
-  it("", () => {}); // TODO: Impliment Test
-});
-
-describe("generateJWTToken", () => {
   it("Generates a jwt token", () => {
-    const accessToken = generateJWTToken(
+    const result = generateAccessToken(
       user.uid,
+      firebaseTokenFake,
       tokenSecret,
       defaultExpireTimeSeconds
     );
-    expect(typeof accessToken).toBe("string");
-    expect(accessToken.split(".")).toHaveLength(3);
+    expect(typeof result?.token).toBeDefined();
+    expect(typeof result?.token).toBe("string");
+    expect(result?.token.split(".")).toHaveLength(3);
   });
 
   it("Generates a valid jwt token with invalid expire time", () => {
-    const accessToken = generateJWTToken(user.uid, tokenSecret, -1);
-    expect(typeof accessToken).toBe("string");
-    expect(accessToken.split(".")).toHaveLength(3);
-    // const token = jwt.decode(accessToken, { json: true });
-    // expect(token?.exp).toBe(defaultExpireTimeSeconds);
+    const result = generateAccessToken(
+      user.uid,
+      firebaseTokenFake,
+      tokenSecret,
+      -1
+    );
+    expect(typeof result?.token).toBeDefined();
+    expect(typeof result?.token).toBe("string");
+    expect(result?.token.split(".")).toHaveLength(3);
   });
 });

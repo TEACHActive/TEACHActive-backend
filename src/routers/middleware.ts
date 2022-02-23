@@ -7,6 +7,7 @@ import { Response } from "./types";
 import { TokenSign } from "./user/types";
 import { TOKEN_SECRET } from "../variables";
 import { isAdminRequest, userOwnsSession } from "./engine";
+import { LimitedDurationUnit } from "./sessions/types";
 
 export const authenticateToken = (
   req: any,
@@ -121,6 +122,12 @@ export const sessionIdParamValidator = param("sessionId")
   .isEmpty()
   .trim()
   .escape();
+export const durationUnitParamValidator = param("unit")
+  .not()
+  .isEmpty()
+  .trim()
+  .escape()
+  .isIn(Object.values(LimitedDurationUnit));
 export const sessionChannelParamValidator = param("channel")
   .not()
   .isEmpty()
@@ -130,13 +137,11 @@ export const numSegmentsQueryValidator = query("numSegments")
   .not()
   .isEmpty()
   .isNumeric()
-  .trim()
   .escape();
 export const minSpeakingAmpQueryValidator = query("minSpeakingAmp")
   .not()
   .isEmpty()
   .isFloat()
-  .trim()
   .escape();
 export const sessionNameBodyValidator = body("name")
   .not()

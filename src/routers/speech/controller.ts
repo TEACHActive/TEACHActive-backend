@@ -176,9 +176,7 @@ export const getSpeechTotalsInSecondsInSession = (
   return new Response(true, speechTotals);
 };
 
-export const countSpeechTotalsForFrames = (
-  frames: SpeechCombinedDataFrame[]
-) => {
+const countSpeechTotalsForFrames = (frames: SpeechCombinedDataFrame[]) => {
   const speechTotalsMap = new Map<Speaker, number>();
 
   frames.sort((a, b) => a.frameNumber - b.frameNumber);
@@ -213,7 +211,7 @@ export const countSpeechTotalsForFrames = (
   return Object.fromEntries(speechTotalsMap);
 };
 
-export const calculateSpeechDataCombinedInSession = (
+const calculateSpeechDataCombinedInSession = (
   studentAudioFrames: AudioFrame[],
   instructorAudioFrames: AudioFrame[],
   minSpeakingAmp: number = 0.005,

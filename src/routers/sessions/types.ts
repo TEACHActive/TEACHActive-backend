@@ -141,6 +141,12 @@ export class AudioFrame {
   };
 }
 
+export enum LimitedDurationUnit {
+  Seconds = "seconds",
+  Minutes = "minutes",
+  Frames = "frames",
+}
+
 export class Person {
   openposeId: number;
   trackingId: number;

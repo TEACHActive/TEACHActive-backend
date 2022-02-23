@@ -9,7 +9,7 @@ import {
 import { Response } from "../types";
 import * as Const from "../../variables";
 import { VideoChannel } from "../sessions/types";
-import { getAttendanceInSession } from "./controller";
+import { getAttendanceFromVideoFrames } from "./controller";
 import { getVideoFramesBySessionId } from "../engine";
 
 const router = express.Router();
@@ -37,7 +37,7 @@ router.get(
           password: Const.DB_PASS,
         }
       );
-      response = await getAttendanceInSession(videoFrames);
+      response = await getAttendanceFromVideoFrames(videoFrames);
     } catch (error) {
       console.error(error);
 
