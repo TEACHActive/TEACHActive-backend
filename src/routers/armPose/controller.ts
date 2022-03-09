@@ -1,7 +1,7 @@
 import { Response } from "../types";
 import { ArmPoseData } from "./types";
 import { getCameraFPS } from "../engine";
-import { chunkArrayIntoNumberOfGroups } from "../util";
+import { chunkArrayIntoMinutes, chunkArrayIntoNumberOfGroups } from "../util";
 import {
   ArmPose,
   Person,
@@ -57,17 +57,11 @@ export const getArmPoseTotalsInSession = (
 
 export const getArmPoseDataInSession = (
   videoFrames: VideoFrame[],
-  numSegments: number = 10
+  chunkSizeInMinutes: number = 5
 ): Response<any[] | null> => {
-  // const defaultArmPoseStats = {
-  //   avg: 0,
-  //   max: Number.MIN_SAFE_INTEGER,
-  //   min: Number.MAX_SAFE_INTEGER,
-  // };
-
-  const chunkedVideoFrames = chunkArrayIntoNumberOfGroups(
+  const chunkedVideoFrames = chunkArrayIntoMinutes(
     videoFrames,
-    numSegments
+    chunkSizeInMinutes
   );
 
   if (chunkedVideoFrames.length === 0) {

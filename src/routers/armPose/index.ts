@@ -9,8 +9,8 @@ import {
   authenticateToken,
   ensureUserOwnsSession,
   sessionIdParamValidator,
-  numSegmentsQueryValidator,
   durationUnitParamValidator,
+  chunkSizeInMinutesQueryValidator,
 } from "../middleware";
 import { Response } from "../types";
 import * as Const from "../../variables";
@@ -67,12 +67,12 @@ const getArmPoseDataInSessionEndpoint = `/data/:sessionId`;
 router.get(
   getArmPoseDataInSessionEndpoint,
   sessionIdParamValidator,
-  numSegmentsQueryValidator,
+  chunkSizeInMinutesQueryValidator,
   ensureValidInput,
   ensureUserOwnsSession,
   async (req, res) => {
     const { sessionId } = req.params!;
-    const numSegments = req.query!.numSegments as string;
+    const chunkSizeInMinutes = req.query!.chunkSizeInMinutes as string;
 
     let response;
     try {
@@ -86,7 +86,7 @@ router.get(
       );
       response = await getArmPoseDataInSession(
         videoFrames,
-        parseInt(numSegments)
+        parseInt(chunkSizeInMinutes)
       );
     } catch (error) {
       console.log(error);

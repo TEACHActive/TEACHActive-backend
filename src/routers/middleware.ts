@@ -138,6 +138,11 @@ export const numSegmentsQueryValidator = query("numSegments")
   .isEmpty()
   .isNumeric()
   .escape();
+export const chunkSizeInMinutesQueryValidator = query("chunkSizeInMinutes")
+  .not()
+  .isEmpty()
+  .isNumeric()
+  .escape();
 export const minSpeakingAmpQueryValidator = query("minSpeakingAmp")
   .not()
   .isEmpty()

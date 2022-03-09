@@ -53,9 +53,12 @@ export const getSitStandTestInSession = async (
 
 export const getSitStandDataInSession = async (
   videoFrames: VideoFrame[],
-  numSegments: number
+  chunkSizeInMinutes: number
 ): Promise<Response<any | null>> => {
-  const chunkedVideoFrames = chunkArrayIntoMinutes(videoFrames, numSegments);
+  const chunkedVideoFrames = chunkArrayIntoMinutes(
+    videoFrames,
+    chunkSizeInMinutes
+  );
 
   if (chunkedVideoFrames.length === 0) {
     return new Response(false, null, 500, "VideoFrames Empty");

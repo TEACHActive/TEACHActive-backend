@@ -85,6 +85,18 @@ export function chunkArrayIntoMinutes<T extends IWithTimestamp>(
   const firstDateTime = myArray[0].timestamp;
 
   for (let i = 0; i < myArray.length; i++) {
+    // Todo: Try to get this to include first and last frames
+    // if (i === 0) {
+    //   const timeDiffMins = Math.floor(
+    //     myArray[0].timestamp.diff(firstDateTime, "minutes").minutes /
+    //       chunkSizeInMinutes
+    //   );
+    //   results[0] = [];
+
+    //   results[0].push(myArray[0]);
+
+    //   continue;
+    // }
     const timeDiffMins = Math.floor(
       myArray[i].timestamp.diff(firstDateTime, "minutes").minutes /
         chunkSizeInMinutes

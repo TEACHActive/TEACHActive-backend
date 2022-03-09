@@ -20,43 +20,43 @@ import { TokenSign } from "../user/types";
 const router = express.Router();
 // router.use(authenticateToken);
 
-/**
- * Update 
- */
- const updateReflectionsForSessionEndpoint = `/:sessionId`;
- router.put(
-   updateReflectionsForSessionEndpoint,
-   authenticateToken,
-   sessionIdParamValidator,
-   ensureValidInput,
-   ensureUserOwnsSession,
-   async (req, res) => {
-     const { sessionId } = req.params!;
-     let response;
- 
-     try {
-       const _req: any = req;
-       const tokenSign: TokenSign = _req.user;
-       response = await updateReflectionSectionsForSession(
-         sessionId,
-         tokenSign,
-         req.body
-       );
-     } catch (error) {
-       console.error(error);
- 
-       response = new Response(
-         false,
-         null,
-         500,
-         "Server error when updating reflection sections"
-       );
-     }
- 
-     res.statusCode = response.statusCode;
-     res.json(response);
-   }
- );
+// /**
+//  * Update
+//  */
+//  const updateReflectionsForSessionEndpoint = `/:sessionId`;
+//  router.put(
+//    updateReflectionsForSessionEndpoint,
+//    authenticateToken,
+//    sessionIdParamValidator,
+//    ensureValidInput,
+//    ensureUserOwnsSession,
+//    async (req, res) => {
+//      const { sessionId } = req.params!;
+//      let response;
+
+//      try {
+//        const _req: any = req;
+//        const tokenSign: TokenSign = _req.user;
+//        response = await updateReflectionSectionsForSession(
+//          sessionId,
+//          tokenSign,
+//          req.body
+//        );
+//      } catch (error) {
+//        console.error(error);
+
+//        response = new Response(
+//          false,
+//          null,
+//          500,
+//          "Server error when updating reflection sections"
+//        );
+//      }
+
+//      res.statusCode = response.statusCode;
+//      res.json(response);
+//    }
+//  );
 
 /**
  * Get Reflections for session

@@ -6,6 +6,7 @@ import {
   ensureUserOwnsSession,
   sessionIdParamValidator,
   numSegmentsQueryValidator,
+  chunkSizeInMinutesQueryValidator,
 } from "../middleware";
 import { Response } from "../types";
 import * as Const from "../../variables";
@@ -64,12 +65,12 @@ const getSitStandDataInSessionEndpoint = `/data/:sessionId`;
 router.get(
   getSitStandDataInSessionEndpoint,
   sessionIdParamValidator,
-  numSegmentsQueryValidator,
+  chunkSizeInMinutesQueryValidator,
   ensureValidInput,
   ensureUserOwnsSession,
   async (req, res) => {
     const { sessionId } = req.params!;
-    const numSegments = req.query!.numSegments as string;
+    const chunkSizeInMinutes = req.query!.chunkSizeInMinutes as string;
 
     let response;
     try {
@@ -83,7 +84,7 @@ router.get(
       );
       response = await getSitStandDataInSession(
         videoFrames,
-        parseInt(numSegments)
+        parseInt(chunkSizeInMinutes)
       );
     } catch (error) {
       console.error(error);
