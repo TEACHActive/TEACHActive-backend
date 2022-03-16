@@ -33,24 +33,19 @@ export const updateSessionNameBySessionId = async (
   sessionId: string,
   name: string
 ): Promise<Response<Session | null>> => {
-  const result = await SessionModel.findByIdAndUpdate(
-    sessionId,
-    [
-      {
-        $set: {
-          "metadata.name": {
-            $ifNull: [name, name],
-          },
-        },
-      },
-    ],
-    { new: true }
-  );
-
-  if (!result) {
-    return new Response(false, null, 500, "Failed to update session name");
+  const sessionMatch = await SessionModel.findById(sessionId);
+  if (!sessionMatch) {
+    return new Response(false, null, 404, "Failed to find matching session");
   }
-  return new Response(true, new Session(result, getCameraFPS()));
+
+  if (!sessionMatch.metadata) {
+    sessionMatch.metadata = { name: name, performance: -1 };
+  }
+
+  sessionMatch.metadata.name = name;
+  sessionMatch.save();
+
+  return new Response(true, new Session(sessionMatch, getCameraFPS()));
 };
 
 // export const getVideoFramesInSession = async (

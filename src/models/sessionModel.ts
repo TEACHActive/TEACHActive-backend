@@ -5,15 +5,29 @@ const MetadataSchema = new Schema({
   performance: Number,
 });
 
-export const SessionModel = mongoose.model(
+const SessionSchema = new Schema({
+  keyword: String,
+  developer: String,
+  version: String,
+  timestamp: String,
+  schemas: [String],
+  metadata: MetadataSchema,
+});
+
+type MongooseSession = {
+  keyword: string;
+  developer: string;
+  version: string;
+  timestamp: string;
+  schemas: string[];
+  metadata: {
+    name: string;
+    performance: number;
+  };
+};
+
+export const SessionModel = mongoose.model<MongooseSession>(
   "SessionModel",
-  new Schema({
-    keyword: String,
-    developer: String,
-    version: String,
-    timestamp: String,
-    schemas: [String],
-    metadata: MetadataSchema,
-  }),
+  SessionSchema,
   "sessions"
 );

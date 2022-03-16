@@ -10,10 +10,6 @@ import {
   router as performance,
   baseEndpoint as performanceEndpoint,
 } from "./performance";
-import {
-  router as reflections,
-  baseEndpoint as reflectionsEndpoint,
-} from "./reflections";
 import { router as user, baseEndpoint as userEndpoint } from "./user";
 import { router as auth, baseEndpoint as authEndpoint } from "./auth";
 import { router as speech, baseEndpoint as speechEndpoint } from "./speech";
@@ -51,10 +47,6 @@ export const appRouters = [
   {
     router: performance,
     endpoint: performanceEndpoint,
-  },
-  {
-    router: reflections,
-    endpoint: reflectionsEndpoint,
   },
   {
     router: speech,
