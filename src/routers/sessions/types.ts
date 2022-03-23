@@ -1,4 +1,4 @@
-import { DateTime, Duration } from "luxon";
+import { DateTime, Duration, DurationObject } from "luxon";
 
 export class Session {
   id: string;
@@ -126,6 +126,7 @@ export class AudioFrame {
   frameNumber: number;
   timestamp: DateTime;
   amplitude: number;
+  timeDiff?: DurationObject;
 
   constructor(data: any, initialDateTime: DateTime, fps: number) {
     this.frameNumber = data.frameNumber;

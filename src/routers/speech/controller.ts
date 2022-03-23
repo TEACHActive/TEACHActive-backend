@@ -1,7 +1,7 @@
 import { DateTime, Duration, DurationUnit } from "luxon";
 
 import { Response } from "../types";
-import { chunkArrayIntoNumberOfGroups } from "../util";
+import { chunkArrayIntoMinutes, chunkArrayIntoNumberOfGroups } from "../util";
 import { Speaker, AudioFrame, AudioChannel } from "../sessions/types";
 import {
   SpeechFrame,
@@ -94,7 +94,7 @@ export const getSpeechDataInSession = (
 export const getSpeechDataCombinedInSession = (
   studentAudioFrames: AudioFrame[],
   instructorAudioFrames: AudioFrame[],
-  numSegments: number = 10,
+  chunkSizeInMinutes: number = 5,
   minSpeakingAmp: number = 0.005
 ): Response<SpeechDataCombined[] | null> => {
   const speechDataCombined = calculateSpeechDataCombinedInSession(
@@ -118,35 +118,51 @@ export const getSpeechDataCombinedInSession = (
     },
     speakerMap: new Map<Speaker, number>(),
     speakerInSeconds: new SpeakerDataInSecondsFromFrames({}),
-    // timeDiff: Duration.fromMillis(0).toObject(),
+    maxAmp: Number.MIN_SAFE_INTEGER,
+    minAmp: Number.MAX_SAFE_INTEGER,
+    timeDiff: Duration.fromMillis(0).toObject(),
   };
 
-  const chunkedSpeechFrames = chunkArrayIntoNumberOfGroups(
+  const chunkedSpeechFrames = chunkArrayIntoMinutes(
     speechDataCombined,
-    numSegments
+    chunkSizeInMinutes
   );
 
   const speechFramesData = chunkedSpeechFrames.map((frameWindow) => {
     const speechStats = frameWindow.reduce((acc, frame, _, { length }) => {
-      acc.speakerMap.set(
+      let tempSpeakerMap = new Map<Speaker, number>();
+      tempSpeakerMap.set(
         frame.speaker,
         (acc.speakerMap.get(frame.speaker) || 0) + 1
       );
+      acc.speakerMap.forEach((value: number, key: Speaker) => {
+        tempSpeakerMap.set(key, tempSpeakerMap.get(key) || 0 + value);
+      });
+      let tempMaxAmp = defaultSpeechFrameStats.maxAmp,
+        tempMinAmp = defaultSpeechFrameStats.minAmp;
+      tempSpeakerMap.forEach((value: number) => {
+        tempMaxAmp = value > tempMaxAmp ? value : tempMaxAmp;
+        tempMinAmp = value < tempMinAmp ? value : tempMinAmp;
+      });
+
       return {
         timestamp: {
           begin: DateTime.min(frame.timestamp, acc.timestamp.begin),
           end: DateTime.max(frame.timestamp, acc.timestamp.end),
         },
-        // timeDiff: frame.timeDiff,
+        timeDiff: frame.timeDiff,
         frameNumber: {
           begin: Math.min(frame.frameNumber, acc.frameNumber.begin),
           avg: acc.frameNumber.avg + frame.frameNumber / length,
           end: Math.max(frame.frameNumber, acc.frameNumber.end),
         },
-        speakerMap: acc.speakerMap,
+        speakerMap: tempSpeakerMap,
         speakerInSeconds: acc.speakerInSeconds,
+        maxAmp: tempMaxAmp,
+        minAmp: tempMinAmp,
       };
     }, defaultSpeechFrameStats);
+
     speechStats.speakerInSeconds = new SpeakerDataInSecondsFromFrames(
       Object.fromEntries(speechStats.speakerMap)
     );
@@ -224,35 +240,35 @@ const calculateSpeechDataCombinedInSession = (
     studentAudioFrames &&
     studentAudioFrames.length > 0
   ) {
-    //Grab the inital timestamps for both frame sets
-    // const instructorInitialDateTime = instructorAudioFrames[0].timestamp;
-    // const studentInitialDateTime = studentAudioFrames[0].timestamp;
+    // Grab the inital timestamps for both frame sets
+    const instructorInitialDateTime = instructorAudioFrames[0].timestamp;
+    const studentInitialDateTime = studentAudioFrames[0].timestamp;
 
-    // //Calculate time diffs for instructor frames
-    // instructorAudioFrames = instructorAudioFrames.map((frame: AudioFrame) => {
-    //   let timeDiff = frame.timestamp
-    //     .diff(instructorInitialDateTime, unit)
-    //     .toObject();
-    //   timeDiff[unit] = Math.round(timeDiff[unit] || 0);
+    //Calculate time diffs for instructor frames
+    instructorAudioFrames = instructorAudioFrames.map((frame: AudioFrame) => {
+      let timeDiff = frame.timestamp
+        .diff(instructorInitialDateTime, unit)
+        .toObject();
+      timeDiff[unit] = Math.round(timeDiff[unit] || 0);
 
-    //   return {
-    //     ...frame,
-    //     timeDiff: timeDiff,
-    //   };
-    // });
+      return {
+        ...frame,
+        timeDiff: timeDiff,
+      };
+    });
 
-    // //Calculate time diffs for student frames
-    // studentAudioFrames = studentAudioFrames.map((frame: AudioFrame) => {
-    //   let timeDiff = frame.timestamp
-    //     .diff(studentInitialDateTime, unit)
-    //     .toObject();
-    //   timeDiff[unit] = Math.round(timeDiff[unit] || 0);
+    //Calculate time diffs for student frames
+    studentAudioFrames = studentAudioFrames.map((frame: AudioFrame) => {
+      let timeDiff = frame.timestamp
+        .diff(studentInitialDateTime, unit)
+        .toObject();
+      timeDiff[unit] = Math.round(timeDiff[unit] || 0);
 
-    //   return {
-    //     ...frame,
-    //     timeDiff: timeDiff,
-    //   };
-    // });
+      return {
+        ...frame,
+        timeDiff: timeDiff,
+      };
+    });
 
     //Loop through min num of frames between each
     let speakerData = [];
@@ -278,10 +294,10 @@ const calculateSpeechDataCombinedInSession = (
       //   3.0;
       const insAmp = instructorAudioFrames[i].amplitude;
       const stuAmp = studentAudioFrames[i].amplitude;
-      // let timeDiff = instructorAudioFrames[i].timestamp
-      //   .diff(instructorInitialDateTime, unit)
-      //   .toObject();
-      // timeDiff[unit] = Math.round(timeDiff[unit] || 0);
+      let timeDiff = instructorAudioFrames[i].timestamp
+        .diff(instructorInitialDateTime, unit)
+        .toObject();
+      timeDiff[unit] = Math.round(timeDiff[unit] || 0);
 
       //Find speaker (who is speaking loudest or if no one can be considered speaking)
       let speaker;
@@ -297,11 +313,12 @@ const calculateSpeechDataCombinedInSession = (
       speakerData.push({
         frameNumber: instructorAudioFrames[i].frameNumber,
         speaker: speaker,
-        // timeDiff: timeDiff,
+        timeDiff: timeDiff,
         timestamp: instructorAudioFrames[i].timestamp,
       });
     }
     speakerData.sort((a, b) => a.timestamp.toMillis() - b.timestamp.toMillis());
+
     return speakerData;
   } else {
     throw new Error("Either Instructor or Student frames null or empty");

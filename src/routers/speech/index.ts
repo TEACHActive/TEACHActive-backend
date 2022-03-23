@@ -14,6 +14,7 @@ import {
   sessionIdParamValidator,
   numSegmentsQueryValidator,
   minSpeakingAmpQueryValidator,
+  chunkSizeInMinutesQueryValidator,
 } from "../middleware";
 import { AudioChannel } from "../sessions/types";
 import { getAudioFramesBySessionId } from "../engine";
@@ -89,7 +90,7 @@ router.get(
           password: Const.DB_PASS,
         }
       );
-      response = await getSpeechDataInSession(
+      response = getSpeechDataInSession(
         audioFrames,
         AudioChannel.Instructor,
         parseInt(numSegments)
@@ -115,7 +116,7 @@ const getSpeechDataCombinedInSessionEndpoint = `/data/:sessionId`;
 router.get(
   getSpeechDataCombinedInSessionEndpoint,
   sessionIdParamValidator,
-  numSegmentsQueryValidator,
+  chunkSizeInMinutesQueryValidator,
   minSpeakingAmpQueryValidator,
   ensureValidInput,
   ensureUserOwnsSession,
@@ -123,7 +124,7 @@ router.get(
     const { sessionId } = req.params!;
 
     const minSpeakingAmp = req.query!.minSpeakingAmp as string;
-    const numSegments = req.query!.numSegments as string;
+    const chunkSizeInMinutes = req.query!.chunkSizeInMinutes as string;
 
     let response;
     try {
@@ -147,7 +148,7 @@ router.get(
       response = getSpeechDataCombinedInSession(
         studentAudioFrames,
         instructorAudioFrames,
-        parseInt(numSegments),
+        parseInt(chunkSizeInMinutes),
         parseFloat(minSpeakingAmp)
       );
     } catch (error) {

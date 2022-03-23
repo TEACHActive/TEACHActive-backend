@@ -39,7 +39,6 @@ export const isAdminRequest = async (
   )?.toObject();
 
   if (!matchingUser || !matchingUser.isAdmin) {
-    console.log("not admin");
     return false;
   }
   return true;

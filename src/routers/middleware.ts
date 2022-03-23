@@ -21,7 +21,7 @@ export const authenticateToken = (
 
   jwt.verify(token, TOKEN_SECRET as string, (err: any, user: any) => {
     if (err) {
-      console.log(err);
+      console.error(err);
       return res.sendStatus(403);
     }
     req.user = user;

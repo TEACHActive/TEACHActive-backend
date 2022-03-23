@@ -25,7 +25,7 @@ export interface SpeechCombinedDataFrame {
   frameNumber: number;
   timestamp: DateTime;
   speaker: Speaker;
-  // timeDiff: DurationObject;
+  timeDiff: DurationObject;
 }
 
 export interface SpeechDataCombined {

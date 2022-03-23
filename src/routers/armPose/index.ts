@@ -89,7 +89,7 @@ router.get(
         parseInt(chunkSizeInMinutes)
       );
     } catch (error) {
-      console.log(error);
+      console.error(error);
 
       response = new Response(
         false,

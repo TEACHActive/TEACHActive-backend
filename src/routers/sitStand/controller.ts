@@ -7,8 +7,6 @@ export const getSitStandTestInSession = async (
   numSegments: number
 ): Promise<Response<any | null>> => {
   const chunkedVideoFrames = chunkArrayIntoMinutes(videoFrames, numSegments);
-  console.log(chunkedVideoFrames.length);
-
   if (chunkedVideoFrames.length === 0) {
     return new Response(false, null, 500, "VideoFrames Empty");
   }
