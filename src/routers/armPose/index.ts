@@ -2,6 +2,7 @@ import express from "express";
 
 import {
   getArmPoseDataInSession,
+  getArmPoseTotalsInMultipleSessions,
   getArmPoseTotalsInSession,
 } from "./controller";
 import {
@@ -11,11 +12,17 @@ import {
   sessionIdParamValidator,
   durationUnitParamValidator,
   chunkSizeInMinutesQueryValidator,
+  multipleSessionIdsQueryValidator,
 } from "../middleware";
 import { Response } from "../types";
 import * as Const from "../../variables";
 import { VideoChannel } from "../sessions/types";
-import { getVideoFramesBySessionId } from "../engine";
+import {
+  getSessionById,
+  getVideoFramesBySessionId,
+  isAdminRequest,
+} from "../engine";
+import { TokenSign } from "../user/types";
 
 const router = express.Router();
 router.use(authenticateToken);
@@ -61,6 +68,47 @@ router.get(
 );
 
 /**
+ * Get Arm Pose totals in Multiple Sessions
+ */
+const getArmPoseTotalsInMultipleSessionsEndpoint = `/multiple/totals/:unit`;
+router.get(
+  getArmPoseTotalsInMultipleSessionsEndpoint,
+  durationUnitParamValidator,
+  multipleSessionIdsQueryValidator,
+  ensureValidInput,
+  ensureUserOwnsSession,
+  async (req, res) => {
+    const { unit } = req.params!;
+    const tokenSign: TokenSign = req.user;
+    const { sessionIds } = req.query!;
+
+    const adminRequest = await isAdminRequest(tokenSign);
+
+    let response;
+    try {
+      response = await getArmPoseTotalsInMultipleSessions(
+        sessionIds,
+        adminRequest,
+        tokenSign.uid,
+        unit
+      );
+    } catch (error) {
+      console.error(error);
+
+      response = new Response(
+        false,
+        null,
+        500,
+        "Server error when getting arm pose totals in session"
+      );
+    }
+
+    res.statusCode = response.statusCode;
+    res.json(response);
+  }
+);
+
+/**
  * Get Arm Pose Data in session
  */
 const getArmPoseDataInSessionEndpoint = `/data/:sessionId`;
@@ -84,7 +132,7 @@ router.get(
           password: Const.DB_PASS,
         }
       );
-      response = await getArmPoseDataInSession(
+      response = getArmPoseDataInSession(
         videoFrames,
         parseInt(chunkSizeInMinutes)
       );

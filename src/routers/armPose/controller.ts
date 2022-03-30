@@ -1,13 +1,20 @@
-import { Response } from "../types";
-import { ArmPoseData } from "./types";
-import { getCameraFPS } from "../engine";
-import { chunkArrayIntoMinutes, chunkArrayIntoNumberOfGroups } from "../util";
 import {
-  ArmPose,
   Person,
+  Session,
+  ArmPose,
   VideoFrame,
+  VideoChannel,
   LimitedDurationUnit,
 } from "../sessions/types";
+import { Response } from "../types";
+import { ArmPoseData } from "./types";
+import * as Const from "../../variables";
+import { chunkArrayIntoMinutes } from "../util";
+import {
+  getCameraFPS,
+  getSessionById,
+  getVideoFramesBySessionId,
+} from "../engine";
 
 export const getArmPoseTotalsInSession = (
   videoFrames: VideoFrame[],
@@ -115,6 +122,43 @@ export const getArmPoseDataInSession = (
   });
 
   return new Response(true, data);
+};
+
+export const getArmPoseTotalsInMultipleSessions = async (
+  sessionIds: string[],
+  isAdminRequest: boolean,
+  uid: string,
+  unit: LimitedDurationUnit
+): Promise<
+  Response<
+    {
+      data?: ArmPoseData;
+      session?: Session;
+    }[]
+  >
+> => {
+  const dataArray = await Promise.all(
+    sessionIds.map(async (sessionId: string) => {
+      const videoFrames = await getVideoFramesBySessionId(
+        sessionId,
+        VideoChannel.Student,
+        {
+          username: Const.DB_USER,
+          password: Const.DB_PASS,
+        }
+      );
+      const result = getArmPoseTotalsInSession(videoFrames, unit);
+
+      const session = await getSessionById(sessionId, uid, isAdminRequest);
+
+      return {
+        session: session.data || undefined,
+        data: result.data || undefined,
+      };
+    })
+  );
+
+  return new Response(true, dataArray);
 };
 
 const countArmPosesFromFrames = (frames: VideoFrame[]) => {

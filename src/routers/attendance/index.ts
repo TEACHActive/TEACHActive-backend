@@ -5,12 +5,17 @@ import {
   authenticateToken,
   ensureUserOwnsSession,
   sessionIdParamValidator,
+  multipleSessionIdsQueryValidator,
 } from "../middleware";
 import { Response } from "../types";
 import * as Const from "../../variables";
 import { VideoChannel } from "../sessions/types";
-import { getAttendanceFromVideoFrames } from "./controller";
-import { getVideoFramesBySessionId } from "../engine";
+import {
+  getAttendanceFromVideoFrames,
+  getAttendanceFromVideoFramesInMultipleSessions,
+} from "./controller";
+import { TokenSign } from "../user/types";
+import { getVideoFramesBySessionId, isAdminRequest } from "../engine";
 
 const router = express.Router();
 router.use(authenticateToken);
@@ -18,7 +23,7 @@ router.use(authenticateToken);
 /**
  * Get Attendance in Session
  */
-const getAttendanceInSessionEndpoint = `/:sessionId`;
+const getAttendanceInSessionEndpoint = `/stats/:sessionId`;
 router.get(
   getAttendanceInSessionEndpoint,
   sessionIdParamValidator,
@@ -37,7 +42,7 @@ router.get(
           password: Const.DB_PASS,
         }
       );
-      response = await getAttendanceFromVideoFrames(videoFrames);
+      response = getAttendanceFromVideoFrames(videoFrames);
     } catch (error) {
       console.error(error);
 
@@ -46,6 +51,46 @@ router.get(
         null,
         500,
         "Server error when getting attendance"
+      );
+    }
+
+    res.statusCode = response.statusCode;
+    res.json(response);
+  }
+);
+
+/**
+ * Get attendance totals in Multiple Sessions
+ */
+const getAttendanceTotalsInMultipleSessionsEndpoint = `/multiple`;
+router.get(
+  getAttendanceTotalsInMultipleSessionsEndpoint,
+  multipleSessionIdsQueryValidator,
+  ensureValidInput,
+  ensureUserOwnsSession,
+  async (req, res) => {
+    console.log(123);
+
+    const tokenSign: TokenSign = req.user;
+    const { sessionIds } = req.query!;
+
+    const adminRequest = await isAdminRequest(tokenSign);
+
+    let response;
+    try {
+      response = await getAttendanceFromVideoFramesInMultipleSessions(
+        sessionIds,
+        adminRequest,
+        tokenSign.uid
+      );
+    } catch (error) {
+      console.error(error);
+
+      response = new Response(
+        false,
+        null,
+        500,
+        "Server error when getting attendance totals in session"
       );
     }
 

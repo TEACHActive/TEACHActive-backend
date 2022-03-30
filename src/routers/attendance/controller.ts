@@ -1,6 +1,8 @@
 import { Response } from "../types";
+import * as Const from "../../variables";
 import { AttendanceStats } from "./types";
-import { VideoFrame } from "../sessions/types";
+import { Session, VideoChannel, VideoFrame } from "../sessions/types";
+import { getSessionById, getVideoFramesBySessionId } from "../engine";
 
 export const getAttendanceFromVideoFrames = (
   videoFrames: VideoFrame[]
@@ -23,4 +25,40 @@ export const getAttendanceFromVideoFrames = (
   }, defaultAttendance);
 
   return new Response(true, attendanceStats);
+};
+
+export const getAttendanceFromVideoFramesInMultipleSessions = async (
+  sessionIds: string[],
+  isAdminRequest: boolean,
+  uid: string
+): Promise<
+  Response<
+    {
+      data?: AttendanceStats;
+      session?: Session;
+    }[]
+  >
+> => {
+  const dataArray = await Promise.all(
+    sessionIds.map(async (sessionId: string) => {
+      const videoFrames = await getVideoFramesBySessionId(
+        sessionId,
+        VideoChannel.Student,
+        {
+          username: Const.DB_USER,
+          password: Const.DB_PASS,
+        }
+      );
+      const result = getAttendanceFromVideoFrames(videoFrames);
+
+      const session = await getSessionById(sessionId, uid, isAdminRequest);
+
+      return {
+        session: session.data || undefined,
+        data: result.data || undefined,
+      };
+    })
+  );
+
+  return new Response(true, dataArray);
 };

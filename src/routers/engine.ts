@@ -1,18 +1,20 @@
 import axios from "axios";
 import { DateTime } from "luxon";
 
-import { MethodType } from "./types";
-// import * as Const from "../variables";
-import { getAxiosConfig } from "./util";
-import { TokenSign } from "./user/types";
 import {
   AudioFrame,
   VideoFrame,
   AudioChannel,
   VideoChannel,
 } from "./sessions/types";
-import { getSessions } from "./sessions/controller";
+// import * as Const from "../variables";
+import { getAxiosConfig } from "./util";
+import { TokenSign } from "./user/types";
+import { Session } from "./sessions/types";
+import { MethodType, Response } from "./types";
 import { UserModel } from "../models/userModel";
+import { getSessions } from "./sessions/controller";
+import { SessionModel } from "../models/sessionModel";
 
 export const getCameraFPS = (): number => {
   return 15; // TODO:  get actual fps
@@ -239,4 +241,19 @@ const makeAudioFrameQuery = async (
   const edusenseResponse = JSON.parse(response.data.response);
 
   return edusenseResponse;
+};
+
+export const getSessionById = async (
+  sessionId: string,
+  uid: string,
+  isAdminRequest: boolean
+): Promise<Response<Session | null>> => {
+  const filter = isAdminRequest ? {} : { keyword: uid };
+  const sessionModel = await SessionModel.findOne(filter).exec();
+  if (!sessionModel) {
+    return new Response(false, null, 404, "Failed to get session");
+  }
+  const session = new Session(sessionModel, getCameraFPS());
+  const response = new Response<Session>(true, session);
+  return response;
 };

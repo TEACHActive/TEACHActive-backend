@@ -3,6 +3,7 @@ import express from "express";
 import { Response } from "../types";
 import {
   getSessionPerformanceForSession,
+  getSessionPerformanceInMultipleSessions,
   setSessionPerformanceForSession,
 } from "./controller";
 import {
@@ -11,7 +12,10 @@ import {
   ensureUserOwnsSession,
   sessionIdParamValidator,
   performanceBodyValidator,
+  multipleSessionIdsQueryValidator,
 } from "../middleware";
+import { TokenSign } from "../user/types";
+import { isAdminRequest } from "../engine";
 
 const router = express.Router();
 router.use(authenticateToken);
@@ -19,7 +23,7 @@ router.use(authenticateToken);
 /**
  * Get Performance metric for session
  */
-const getPerformanceForSessionEndpoint = `/:sessionId`;
+const getPerformanceForSessionEndpoint = `/stats/:sessionId`;
 router.get(
   getPerformanceForSessionEndpoint,
   sessionIdParamValidator,
@@ -37,6 +41,44 @@ router.get(
         null,
         500,
         "Server error when getting session performance"
+      );
+    }
+
+    res.statusCode = response.statusCode;
+    res.json(response);
+  }
+);
+
+/**
+ * Get Performance metric totals in multiple Sessions
+ */
+const getPerformanceForMultipleSessionsEndpoint = `/multiple`;
+router.get(
+  getPerformanceForMultipleSessionsEndpoint,
+  multipleSessionIdsQueryValidator,
+  ensureValidInput,
+  ensureUserOwnsSession,
+  async (req, res) => {
+    const tokenSign: TokenSign = req.user;
+    const { sessionIds } = req.query!;
+
+    const adminRequest = await isAdminRequest(tokenSign);
+
+    let response;
+    try {
+      response = await getSessionPerformanceInMultipleSessions(
+        sessionIds,
+        adminRequest,
+        tokenSign.uid
+      );
+    } catch (error) {
+      console.error(error);
+
+      response = new Response(
+        false,
+        null,
+        500,
+        "Server error when getting Performance in sessions"
       );
     }
 

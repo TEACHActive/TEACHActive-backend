@@ -122,6 +122,7 @@ export const sessionIdParamValidator = param("sessionId")
   .isEmpty()
   .trim()
   .escape();
+
 export const durationUnitParamValidator = param("unit")
   .not()
   .isEmpty()
@@ -148,6 +149,10 @@ export const minSpeakingAmpQueryValidator = query("minSpeakingAmp")
   .isEmpty()
   .isFloat()
   .escape();
+export const multipleSessionIdsQueryValidator = query("sessionIds")
+  .not()
+  .isEmpty()
+  .isArray();
 export const sessionNameBodyValidator = body("name")
   .not()
   .isEmpty()

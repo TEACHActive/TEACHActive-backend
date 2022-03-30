@@ -1,6 +1,6 @@
 import { SessionModel } from "../../models/sessionModel";
-import { getCameraFPS } from "../engine";
-import { Session } from "../sessions/types";
+import { getCameraFPS, getSessionById } from "../engine";
+import { Session, VideoChannel } from "../sessions/types";
 import { Response } from "../types";
 import { SessionPerformance } from "./types";
 
@@ -23,6 +23,34 @@ export const getSessionPerformanceForSession = async (
       performance: matchingSession.performance,
     })
   );
+};
+
+export const getSessionPerformanceInMultipleSessions = async (
+  sessionIds: string[],
+  isAdminRequest: boolean,
+  uid: string
+): Promise<
+  Response<
+    {
+      data?: SessionPerformance;
+      session?: Session;
+    }[]
+  >
+> => {
+  const dataArray = await Promise.all(
+    sessionIds.map(async (sessionId: string) => {
+      const result = await getSessionPerformanceForSession(sessionId);
+
+      const session = await getSessionById(sessionId, uid, isAdminRequest);
+
+      return {
+        session: session.data || undefined,
+        data: result.data || undefined,
+      };
+    })
+  );
+
+  return new Response(true, dataArray);
 };
 
 export const setSessionPerformanceForSession = async (

@@ -31,6 +31,10 @@ class SpeechTestHelper {
       frameNumber: (this.frameNumber += frameNumberDiff),
       timestamp: this.currDateTime.plus({ seconds: secondsDiff }),
       speaker: speaker,
+      timeDiff: this.currDateTime
+        .plus({ seconds: secondsDiff })
+        .diff(this.startDateTime)
+        .toObject(),
     };
   };
 
