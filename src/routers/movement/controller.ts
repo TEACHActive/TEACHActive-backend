@@ -5,7 +5,7 @@ import {
   InstructorMovementFrameResponse,
 } from "./types";
 import { Response } from "../types";
-import { chunkArrayIntoMinutes } from "../util";
+import { chunkArrayIntoUnits } from "../util";
 import { BodyPart, VideoFrame } from "../sessions/types";
 
 export const getInstructorMovementDataInSession = (
@@ -18,7 +18,7 @@ export const getInstructorMovementDataInSession = (
     durationUnit
   );
 
-  const chunkedVideoFrames = chunkArrayIntoMinutes(
+  const chunkedVideoFrames = chunkArrayIntoUnits(
     instructorInFrames,
     chunkSizeInMinutes
   );

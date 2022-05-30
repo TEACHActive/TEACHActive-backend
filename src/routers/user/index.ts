@@ -7,7 +7,6 @@ import { authenticateToken, ensureUserIsAdmin } from "../middleware";
 
 const router = express.Router();
 router.use(authenticateToken);
-router.use(ensureUserIsAdmin);
 
 /**
  * Get User by UID

@@ -1,6 +1,13 @@
 import { DateTime } from "luxon";
 import { IWithTimeDiff, IWithTimestamp, MethodType } from "./types";
-import { ArmPose, Body, Person, SitStand, VideoFrame } from "./sessions/types";
+import {
+  ArmPose,
+  Body,
+  LimitedDurationUnit,
+  Person,
+  SitStand,
+  VideoFrame,
+} from "./sessions/types";
 import { idText } from "typescript";
 
 const BASE_URL_HTTPS = "https://teachactive.engineering.iastate.edu";
@@ -76,30 +83,18 @@ export function chunkArrayIntoGroupsOfSize<T>(
  *
  * @param myArray {Array} Array to split
  */
-export function chunkArrayIntoMinutes<T extends IWithTimestamp>(
+export function chunkArrayIntoUnits<T extends IWithTimestamp>(
   myArray: T[],
-  chunkSizeInMinutes: number = 1
+  chunkSizeUnit: number = 1,
+  unit: "seconds" | "minutes" = LimitedDurationUnit.Minutes
 ): T[][] {
   let results: T[][] = [];
 
   const firstDateTime = myArray[0].timestamp;
 
   for (let i = 0; i < myArray.length; i++) {
-    // Todo: Try to get this to include first and last frames
-    // if (i === 0) {
-    //   const timeDiffMins = Math.floor(
-    //     myArray[0].timestamp.diff(firstDateTime, "minutes").minutes /
-    //       chunkSizeInMinutes
-    //   );
-    //   results[0] = [];
-
-    //   results[0].push(myArray[0]);
-
-    //   continue;
-    // }
     const timeDiffMins = Math.floor(
-      myArray[i].timestamp.diff(firstDateTime, "minutes").minutes /
-        chunkSizeInMinutes
+      myArray[i].timestamp.diff(firstDateTime, unit)[unit] / chunkSizeUnit
     );
 
     if (!Array.isArray(results[timeDiffMins])) {

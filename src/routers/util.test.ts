@@ -1,5 +1,5 @@
 import { ArmPose } from "./sessions/types";
-import { chunkArrayIntoMinutes, TestHelper } from "./util";
+import { chunkArrayIntoUnits, TestHelper } from "./util";
 
 const sampleHelper = new TestHelper();
 
@@ -21,7 +21,7 @@ const videoFrames = [
 ];
 describe("chunkArrayIntoMinutes", () => {
   it("Correctly chunks array by minute", () => {
-    const result = chunkArrayIntoMinutes(videoFrames);
+    const result = chunkArrayIntoUnits(videoFrames);
 
     // console.log(result.map((a) => a.map((b) => b.timestamp.toISOTime())));
 
@@ -32,7 +32,7 @@ describe("chunkArrayIntoMinutes", () => {
     expect(result[3].length).toBe(2);
   });
   it("Correctly chunks array with different chunk size", () => {
-    const result = chunkArrayIntoMinutes(videoFrames, 2);
+    const result = chunkArrayIntoUnits(videoFrames, 2);
 
     console.log(result.map((a) => a.map((b) => b.timestamp.toISOTime())));
 

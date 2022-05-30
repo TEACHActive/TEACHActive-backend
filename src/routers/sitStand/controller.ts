@@ -1,12 +1,12 @@
 import { Response } from "../types";
-import { chunkArrayIntoMinutes } from "../util";
+import { chunkArrayIntoUnits } from "../util";
 import { Person, SitStand, VideoFrame } from "../sessions/types";
 
 export const getSitStandTestInSession = async (
   videoFrames: VideoFrame[],
   numSegments: number
 ): Promise<Response<any | null>> => {
-  const chunkedVideoFrames = chunkArrayIntoMinutes(videoFrames, numSegments);
+  const chunkedVideoFrames = chunkArrayIntoUnits(videoFrames, numSegments);
   if (chunkedVideoFrames.length === 0) {
     return new Response(false, null, 500, "VideoFrames Empty");
   }
@@ -53,7 +53,7 @@ export const getSitStandDataInSession = async (
   videoFrames: VideoFrame[],
   chunkSizeInMinutes: number
 ): Promise<Response<any | null>> => {
-  const chunkedVideoFrames = chunkArrayIntoMinutes(
+  const chunkedVideoFrames = chunkArrayIntoUnits(
     videoFrames,
     chunkSizeInMinutes
   );

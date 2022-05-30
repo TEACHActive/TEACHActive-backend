@@ -64,10 +64,10 @@ export class SpeakerDataInSecondsFromFrames {
   [Speaker.Instructor]: number;
 
   constructor(data: any) {
-    this[Speaker.Ambient] = data[Speaker.Ambient] / getCameraFPS();
-    this[Speaker.Silent] = data[Speaker.Silent] / getCameraFPS();
+    this[Speaker.Ambient] = data[Speaker.Ambient] || 0 / getCameraFPS();
+    this[Speaker.Silent] = data[Speaker.Silent] || 0 / getCameraFPS();
     //Flip since student Video is student Instructor and vice versa
-    this[Speaker.Student] = data[Speaker.Instructor] / getCameraFPS();
-    this[Speaker.Instructor] = data[Speaker.Student] / getCameraFPS();
+    this[Speaker.Student] = data[Speaker.Instructor] || 0 / getCameraFPS();
+    this[Speaker.Instructor] = data[Speaker.Student] || 0 / getCameraFPS();
   }
 }

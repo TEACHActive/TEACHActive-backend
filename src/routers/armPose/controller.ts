@@ -9,7 +9,7 @@ import {
 import { Response } from "../types";
 import { ArmPoseData } from "./types";
 import * as Const from "../../variables";
-import { chunkArrayIntoMinutes } from "../util";
+import { chunkArrayIntoUnits } from "../util";
 import {
   getCameraFPS,
   getSessionById,
@@ -66,7 +66,7 @@ export const getArmPoseDataInSession = (
   videoFrames: VideoFrame[],
   chunkSizeInMinutes: number = 5
 ): Response<any[] | null> => {
-  const chunkedVideoFrames = chunkArrayIntoMinutes(
+  const chunkedVideoFrames = chunkArrayIntoUnits(
     videoFrames,
     chunkSizeInMinutes
   );

@@ -168,7 +168,7 @@ router.get(
 /**
  * Get Speech Totals In session
  */
-const getSpeechTotalsInSessionEndpoint = `/totals/seconds/:sessionId`;
+const getSpeechTotalsInSessionEndpoint = `/totals/:sessionId`;
 router.get(
   getSpeechTotalsInSessionEndpoint,
   sessionIdParamValidator,

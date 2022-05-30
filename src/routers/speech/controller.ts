@@ -1,7 +1,7 @@
-import { DateTime, Duration, DurationUnit } from "luxon";
+import { DateTime, Duration, DurationObject, DurationUnit } from "luxon";
 
 import { Response } from "../types";
-import { chunkArrayIntoMinutes, chunkArrayIntoNumberOfGroups } from "../util";
+import { chunkArrayIntoUnits, chunkArrayIntoNumberOfGroups } from "../util";
 import { Speaker, AudioFrame, AudioChannel } from "../sessions/types";
 import {
   SpeechFrame,
@@ -123,7 +123,7 @@ export const getSpeechDataCombinedInSession = (
     timeDiff: Duration.fromMillis(0).toObject(),
   };
 
-  const chunkedSpeechFrames = chunkArrayIntoMinutes(
+  const chunkedSpeechFrames = chunkArrayIntoUnits(
     speechDataCombined,
     chunkSizeInMinutes
   );
@@ -177,7 +177,7 @@ export const getSpeechTotalsInSecondsInSession = (
   studentAudioFrames: AudioFrame[],
   instructorAudioFrames: AudioFrame[],
   minSpeakingAmp: number = 0.005
-): Response<SpeechTotalsInSecondsFromFrames | null> => {
+): Response<any> => {
   const speechDataCombined = calculateSpeechDataCombinedInSession(
     studentAudioFrames,
     instructorAudioFrames,
@@ -185,11 +185,54 @@ export const getSpeechTotalsInSecondsInSession = (
     "seconds"
   );
 
-  const speechTotals = new SpeechTotalsInSecondsFromFrames(
-    countSpeechTotalsForFrames(speechDataCombined)
-  );
+  let speakerMap = {
+    [Speaker.Ambient]: 0,
+    [Speaker.Instructor]: 0,
+    [Speaker.Student]: 0,
+    [Speaker.Silent]: 0,
+  };
 
-  return new Response(true, speechTotals);
+  for (let index = 0; index < speechDataCombined.length; index++) {
+    const element = speechDataCombined[index];
+
+    speakerMap[element.speaker] += 1;
+  }
+
+  const sessionLength = speechDataCombined[
+    speechDataCombined.length - 1
+  ].timestamp
+    .diff(speechDataCombined[0].timestamp)
+    .as("minutes");
+
+  const studentInstructorNumSpeakingFrames =
+    speakerMap[Speaker.Student] + speakerMap[Speaker.Instructor];
+
+  return new Response(true, {
+    speakerMap: speakerMap,
+    sessionLength: sessionLength,
+    speakingTime: {
+      [Speaker.Student]:
+        (speakerMap[Speaker.Student] / studentInstructorNumSpeakingFrames) *
+        sessionLength,
+      [Speaker.Instructor]:
+        (speakerMap[Speaker.Instructor] / studentInstructorNumSpeakingFrames) *
+        sessionLength,
+    },
+    speakingPercent: {
+      [Speaker.Student]:
+        speakerMap[Speaker.Student] / studentInstructorNumSpeakingFrames,
+      [Speaker.Instructor]:
+        speakerMap[Speaker.Instructor] / studentInstructorNumSpeakingFrames,
+    },
+  });
+  // const speechDataCombined = calculateSpeechDataCombinedInSession(
+  //   studentAudioFrames,
+  //   instructorAudioFrames,
+  //   minSpeakingAmp,
+  //   "seconds"
+  // );
+
+  // return new Response(true, speakerMap);
 };
 
 const countSpeechTotalsForFrames = (frames: SpeechCombinedDataFrame[]) => {
